@@ -1,0 +1,215 @@
+{
+  "R": {
+    "positions": [
+      {
+        "X": 1,
+        "Y": 1
+      },
+      {
+        "X": 2,
+        "Y": 1
+      },
+      {
+        "X": 3,
+        "Y": 1
+      },
+      {
+        "X": 3,
+        "Y": 2
+      },
+      {
+        "X": 3,
+        "Y": 3
+      }
+    ],
+    "levelReport": {
+      "utilityGained": 0.95,
+      "exitUtility": 1.0,
+      "runnerUtility": 0.95,
+      "loitererUtility": 5.0,
+      "completionistUtility": "NaN",
+      "monsterKillerUtility": "NaN",
+      "treasureCollectorUtility": 0.3,
+      "turnsTaken": 5,
+      "health": 10,
+      "healthLost": 0,
+      "alive": true,
+      "javelinsThrown": 0,
+      "monsterKills": 0,
+      "minitaurKnockouts": 0,
+      "treasuresCollected": 0,
+      "potionsTaken": 0,
+      "totalMonsters": 0,
+      "totalTreasures": 0,
+      "totalPotions": 0,
+      "timeTaken": 817.0,
+      "endDistToExit": 1,
+      "startDistanceToExit": 6,
+      "longestPath": 7
+    },
+    "mechanics": [
+      {
+        "timestep": 4,
+        "mechanic": "ReachStairs"
+      }
+    ],
+    "startLocation": {
+      "X": 1,
+      "Y": 1
+    },
+    "stateReport": [
+      "Health: 10 X: 1 Y: 1\nXXXXX\nXH  X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,1,0\nHealth: 10 X: 2 Y: 1\nXXXXX\nX H X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,1,0\nHealth: 10 X: 3 Y: 1\nXXXXX\nX  HX\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 2\nXXXXX\nX   X\nX  HX\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 3\nXXXXX\nX   X\nX   X\nX  HX\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 4\nXXXXX\nX   X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n"
+    ],
+    "levelStates": null,
+    "frequencies": {
+      "ReachStairs": 1
+    }
+  },
+  "TC": {
+    "positions": [
+      {
+        "X": 1,
+        "Y": 1
+      },
+      {
+        "X": 2,
+        "Y": 1
+      },
+      {
+        "X": 3,
+        "Y": 1
+      },
+      {
+        "X": 3,
+        "Y": 2
+      },
+      {
+        "X": 3,
+        "Y": 3
+      }
+    ],
+    "levelReport": {
+      "utilityGained": 0.3,
+      "exitUtility": 1.0,
+      "runnerUtility": 0.95,
+      "loitererUtility": 5.0,
+      "completionistUtility": "NaN",
+      "monsterKillerUtility": "NaN",
+      "treasureCollectorUtility": 0.3,
+      "turnsTaken": 5,
+      "health": 10,
+      "healthLost": 0,
+      "alive": true,
+      "javelinsThrown": 0,
+      "monsterKills": 0,
+      "minitaurKnockouts": 0,
+      "treasuresCollected": 0,
+      "potionsTaken": 0,
+      "totalMonsters": 0,
+      "totalTreasures": 0,
+      "totalPotions": 0,
+      "timeTaken": 745.0,
+      "endDistToExit": 1,
+      "startDistanceToExit": 6,
+      "longestPath": 7
+    },
+    "mechanics": [
+      {
+        "timestep": 4,
+        "mechanic": "ReachStairs"
+      }
+    ],
+    "startLocation": {
+      "X": 1,
+      "Y": 1
+    },
+    "stateReport": [
+      "Health: 10 X: 1 Y: 1\nXXXXX\nXH  X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,1,0\nHealth: 10 X: 2 Y: 1\nXXXXX\nX H X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,1,0\nHealth: 10 X: 3 Y: 1\nXXXXX\nX  HX\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 2\nXXXXX\nX   X\nX  HX\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 3\nXXXXX\nX   X\nX   X\nX  HX\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 4\nXXXXX\nX   X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n"
+    ],
+    "levelStates": null,
+    "frequencies": {
+      "ReachStairs": 1
+    }
+  },
+  "MK": {
+    "positions": [
+      {
+        "X": 1,
+        "Y": 1
+      },
+      {
+        "X": 2,
+        "Y": 1
+      },
+      {
+        "X": 3,
+        "Y": 1
+      },
+      {
+        "X": 3,
+        "Y": 2
+      },
+      {
+        "X": 3,
+        "Y": 3
+      }
+    ],
+    "levelReport": {
+      "utilityGained": "NaN",
+      "exitUtility": 1.0,
+      "runnerUtility": 0.95,
+      "loitererUtility": 5.0,
+      "completionistUtility": "NaN",
+      "monsterKillerUtility": "NaN",
+      "treasureCollectorUtility": 0.3,
+      "turnsTaken": 5,
+      "health": 10,
+      "healthLost": 0,
+      "alive": true,
+      "javelinsThrown": 0,
+      "monsterKills": 0,
+      "minitaurKnockouts": 0,
+      "treasuresCollected": 0,
+      "potionsTaken": 0,
+      "totalMonsters": 0,
+      "totalTreasures": 0,
+      "totalPotions": 0,
+      "timeTaken": 749.0,
+      "endDistToExit": 1,
+      "startDistanceToExit": 6,
+      "longestPath": 7
+    },
+    "mechanics": [
+      {
+        "timestep": 4,
+        "mechanic": "ReachStairs"
+      }
+    ],
+    "startLocation": {
+      "X": 1,
+      "Y": 1
+    },
+    "stateReport": [
+      "Health: 10 X: 1 Y: 1\nXXXXX\nXH  X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,1,0\nHealth: 10 X: 2 Y: 1\nXXXXX\nX H X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,1,0\nHealth: 10 X: 3 Y: 1\nXXXXX\nX  HX\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 2\nXXXXX\nX   X\nX  HX\nX   X\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 3\nXXXXX\nX   X\nX   X\nX  HX\nX  eX\nX   X\nXXXXX\n",
+      "Move,0,1\nHealth: 10 X: 3 Y: 4\nXXXXX\nX   X\nX   X\nX   X\nX  eX\nX   X\nXXXXX\n"
+    ],
+    "levelStates": null,
+    "frequencies": {
+      "ReachStairs": 1
+    }
+  }
+}
