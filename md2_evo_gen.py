@@ -11,6 +11,8 @@ import sys
 import subprocess
 import os
 from tqdm import tqdm
+import json
+from copy import deepcopy
 
 
 #global constants
@@ -68,18 +70,25 @@ for r in template_map_str.split("\n"):
 
 #stores the minidungeons2 2d array ascii maps with fitness value and behavior characteristic
 class EvoMap():
-	def __init__(self):
+	def __init__(self,randomInit=False):
 		self.asc_map = []    #ascii map rep of the level (2d array of characters)
 		self.fitness = 0     #fitness value 
 		self.con = 0   		 #constraint value
 		self.genome = PERSONA 	 #behavior characteristic definition [runner, monster killer, treasure collector]
+		
+		self.r = random.random() #test key
+		if randomInit:
+			self.initRandomMap()
+			#print(self)
+
 
 	#makes a copy of the map
 	def clone(self):
 		new_map = EvoMap()
-		new_map.asc_map = self.asc_map.copy()
+		new_map.asc_map = deepcopy(self.asc_map)
 		new_map.fitness = self.fitness
 		new_map.con = self.con
+		new_map.r = self.r
 		new_map.genome = self.genome
 
 		return new_map
@@ -103,6 +112,7 @@ class EvoMap():
 		emstr += (f"c:{self.con}\n")
 		emstr += (f"f:{self.fitness}\n")
 		emstr += (f"g:{self.genome}\n")
+		emstr += (f"r:{self.r}\n")
 
 		return emstr
 
@@ -124,7 +134,7 @@ class EvoMap():
 
 				#add another row to the map
 				if mf:
-					r = l.split("")
+					r = [x for x in l.strip()]
 					m.append(r)
 				#set the details 
 				else:
@@ -155,7 +165,7 @@ class EvoMap():
 
 	#makes sure there is only one character on the map and removes all others (randomly chosen)
 	def singleConstraint(self, m, c):
-		update_map = m.copy()
+		update_map = deepcopy(m)
 		charPos = list(zip(*np.where(m == asc_char_map[c])))  #list of tuples
 
 		#too many characters - reduce them
@@ -180,7 +190,7 @@ class EvoMap():
 
 	#makes sure there is an even number of a characters on the map and removes the leftover (randomly chosen)
 	def pairConstraint(self, m, c):
-		update_map = m.copy()
+		update_map = deepcopy(m)
 		charPos = list(zip(*np.where(m == asc_char_map[c])))  #list of tuples
 
 		#one too many characters - remove it
@@ -198,7 +208,7 @@ class EvoMap():
 
 		#use the empty template
 		if USE_TEMPLATE:
-			am = template_map.copy()
+			am = deepcopy(template_map)
 			w = len(am[1])
 			h = len(am)
 		#create a whole new map with different dimensions
@@ -246,7 +256,7 @@ class EvoMap():
 
 	#mutates the ascii map according to a mutation rate
 	def mutateMap(self,mutRate):
-		nm = self.asc_map.copy()
+		nm = deepcopy(self.asc_map)
 		for hi in range(1,len(nm)-1):
 			for wi in range(1,len(nm[0])-1):
 				if(random.random() <= mutRate):
@@ -349,9 +359,9 @@ class EvoMap():
 		self.map2File(filename)      #export the map out to be read by the engine
 		cmd_out = os.popen(f"{EXT_EVAL_CMD} {PERSONA} {filename}").read()   #run the script and get the output
 
-		#parse the output and save for the map data
-		self.fitness = float(cmd_out)
-		self.genome = PERSONA
+		#the output is a json file of the results - parse it
+
+		
 
 
 #QD algorithm for storing feasible-infeasible maps
@@ -368,9 +378,12 @@ class FI2Pop():
 	def initPop(self,popsize):
 		self.population = []
 		for p in range(popsize):
-			em = EvoMap()
-			em.initRandomMap()
-			self.population.append(em)
+			e = EvoMap(True)
+			self.population.append(e)
+		'''
+		for p in self.population:
+			print(f"{''.join(p.asc_map[1])}\n> r:{p.r:.2f}\n")
+		'''
 
 	#empty the archive
 	def initArc(self):
@@ -409,7 +422,7 @@ class FI2Pop():
 
 			#sort and trim off the worst constr/fit 
 			self.feas = sorted(self.feas,reverse=True)
-			leftovers = self.feas[self.maxSets:].copy()
+			leftovers = deepcopy(self.feas[self.maxSets:])
 			self.feas = self.feas[:self.maxSets]
 
 			#add leftover feasibles to the infeasible population
@@ -446,6 +459,9 @@ class FI2Pop():
 		#reset the population and archive
 		self.initPop(popsize)
 		self.initArc()
+
+		#for p in self.population:
+		#	print(p)
 
 		#start the iterations
 		with tqdm(total = iterations) as pbar:
