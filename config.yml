@@ -6,14 +6,14 @@ OUTPUT_FOLDER : MD2_evo-archive  # output folder for the exported levels created
 TEMP_CHROME_FOLDER : temp
 
 # experiment parameters
-ITERATIONS : 10
+ITERATIONS : 30
 MAP_MUTATION_RATE : 0.2
 FEASIBLE_SEL_RATE : 0.6
-POPSIZE : 3
+POPSIZE : 20
 MAX_SET_SIZE : 5
 EMPTY_RATE : 0.5
 WALL_RATE : 0.4
-CORES : 3
+CORES : 10
 FITNESS_FUNCTION: success
 OUTPUT_INTERVAL: 10
 

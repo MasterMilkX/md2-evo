@@ -558,7 +558,7 @@ class FI2Pop():
                     jsonObj = json.load(jf)
 
                 # pass json to the fitness function to get a value back
-                fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
+                fitness = evaluate_fitness(jsonObj, chromosome.asc_map, self.persona, func=self.func)
                 chromosome.fitness = fitness
                 #print(f"#{i}: {chromosome.r} - {chromosome.con:.2f} - {chromosome.fitness:.2f}")
             except Exception:

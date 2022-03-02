@@ -1,3 +1,5 @@
+from utility import entr_fitness
+import numpy as np
 supported_fitness_functions = [
     "gma",
     "success"
@@ -11,23 +13,26 @@ supported_personas = [
 target_weight = 0.5
 
 
-def evaluate_fitness(result_obj, target_persona="R", func="success", cascading=True):
+def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", cascading=True):
     assert(func in supported_fitness_functions,
            f"Input function {func} not part of supported fitness functions.")
     if func == "success":
-        return eval_fitness_success(result_obj, target_persona, cascading)
+        return eval_fitness_success(result_obj, asc_map, target_persona, cascading)
     elif func == "gma":
-        return eval_fitness_gma(result_obj, target_persona)
+        return eval_fitness_gma(result_obj, asc_map, target_persona)
 
+def eval_fitness_entropy(asc_map):
+    asc_map = np.array(asc_map)
+    return 1 - entr_fitness(asc_map)
 
-def eval_fitness_success(result_obj, target_persona, cascading):
+def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
     target_fitness = 0.0
     non_target_fitness = 0.0
     for persona in supported_personas:
 
         result_persona = result_obj[persona]
         level_report = result_persona["levelReport"]
-        win_or_lose = int(level_report["exitUtility"])
+        win_or_lose = int(level_report["exitUtility"]) and level_report["alive"]
         end_dist_to_exit = level_report["endDistToExit"]
         longest_path = level_report["longestPath"]
         health_left = level_report["health"]
@@ -48,16 +53,16 @@ def eval_fitness_success(result_obj, target_persona, cascading):
     if cascading:
         if target_fitness != 1:
             fitness = target_fitness
-        else:
+        elif non_target_fitness != 1:
             fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
+        else:
+            fitness = target_fitness * target_weight + non_target_fitness * (1-target_weight) + eval_fitness_entropy(asc_map)
     else:
         fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
 
-    if fitness == 1:
-        print("here")
     return fitness
 
 
-def eval_fitness_gma(result_obj, target_persona):
+def eval_fitness_gma(result_obj, asc_map, target_persona):
     # read in GMA data
     raise NotImplementedError("gma func not implemented yet")
