@@ -84,7 +84,7 @@ class EvoMap():
 
     # makes a copy of the map
 
-    def clone(self):
+    def clone(self,saveStats=False):
         new_map = EvoMap(
             empty_rate=self.empty_rate,
             wall_rate=self.wall_rate,
@@ -95,8 +95,12 @@ class EvoMap():
             randomInit=False
         )
         new_map.asc_map = deepcopy(self.asc_map)
-        new_map.fitness = 0
-        new_map.con = 0
+        if saveStats:
+            new_map.fitness = self.fitness
+            new_map.con = self.con
+        else:
+            new_map.fitness = 0
+            new_map.con = 0
         new_map.genome = self.genome
 
         return new_map
@@ -157,7 +161,7 @@ class EvoMap():
 
         # details second
         with open(filename, "a+") as f:
-            f.write("%---%\n")
+            f.write("\n%---%\n")
             f.write(f"fitness:{self.fitness}\n")
             f.write(f"con:{self.con}\n")
             f.write(f"genome:{self.genome}\n")
@@ -403,7 +407,7 @@ class EvoMap():
             return self.getExtEval(f"evomap-{fileID}.txt")
         else:
             #print(f"{fileID} invalid map!")
-            print(f"#{fileID}: {self.r} - {self.con:.2f} - {self.fitness:.2f}")
+            #print(f"#{fileID}: {self.r} - {self.con:.2f} - {self.fitness:.2f}")
             return False
 
     # exports the ascii map to a text file specified
@@ -490,11 +494,11 @@ class FI2Pop():
 
             # TO FEASIBLE (IF CONSTRAINTS WORK AND BETTER FITNESS)
             if c == 1:
-                self.feas.append(p.clone())
+                self.feas.append(p.clone(True))
 
             # TO INFEASIBLE
             else:
-                self.infeas.append(p.clone())
+                self.infeas.append(p.clone(True))
 
             # sort and trim off the worst constr/fit
             self.feas = sorted(self.feas, reverse=True)
@@ -503,7 +507,7 @@ class FI2Pop():
 
             # add leftover feasibles to the infeasible population
             for li in leftovers:
-                self.infeas.append(li)
+                self.infeas.append(li.clone(True))
 
             # trim infeasible set
             self.infeas = sorted(self.infeas, reverse=True)
@@ -515,7 +519,7 @@ class FI2Pop():
         for i in range(popsize):
             r = random.random()
             # select from the feasible population
-            if r <= feasRate and len(self.feas) > 0:
+            if (r <= feasRate and len(self.feas) > 0) or len(self.infeas) == 0:
                 we = list(range(len(self.feas), 0, -1))
                 newp.append(random.choices(self.feas, weights=we, k=1)[0].clone())
             # select from the infeasible population
@@ -556,7 +560,7 @@ class FI2Pop():
                 # pass json to the fitness function to get a value back
                 fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
                 chromosome.fitness = fitness
-                print(f"#{i}: {chromosome.r} - {chromosome.con:.2f} - {chromosome.fitness:.2f}")
+                #print(f"#{i}: {chromosome.r} - {chromosome.con:.2f} - {chromosome.fitness:.2f}")
             except Exception:
                 continue
 
@@ -584,7 +588,7 @@ class FI2Pop():
 
                 #remove previous evomap files and results
                 past_evofiles = [os.path.join(self.temp_chrome_folder,f) for f in os.listdir(self.temp_chrome_folder) if re.match('evomap-.+\.txt',f)]
-                print (f"( Deleting {len(past_evofiles)} previous evomap files... )")
+                #print (f"( Deleting {len(past_evofiles)} previous evomap files... )")
                 for pevo in past_evofiles:
                     os.remove(pevo)
 
@@ -594,8 +598,8 @@ class FI2Pop():
 
                 # evaluate the new population
                 self.evaluate_pop(parallel)
-                for p in self.population:
-                    print(p)
+                # for p in self.population:
+                #     print(p)
 
                 #print(f"pop: {[f'{e.con}-{e.fitness}' for e in self.population]}")
 
