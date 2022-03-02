@@ -1,25 +1,44 @@
 # Level generator for MiniDungeons2
 # Generates levels using FI2Pop QD algorithm
-# usage: python md2_evo_gen.py
+# usage: python md2_evo_gen.py [R|MK|TC]
 
 
 # imports
 import numpy as np
 import random
+import math
+import sys
 import subprocess
 import os
+import re
 from tqdm import tqdm
 import json
 from copy import deepcopy
 from multiprocessing import Pool
-import yaml
-import re
-import csv
+
 
 # import fitness evaluator commands
 from fitness_evaluator import evaluate_fitness
 
 
+# global constants
+USE_TEMPLATE = True  # whether to use the preset template
+# external call to the program that evaluates the map and returns the result as a JSON
+EXT_GMA_CMD = "fitness_executable/MinidungeonsConsole.exe"
+OUTPUT_FOLDER = "MD2_evo-archive"  # output folder for the exported levels created
+
+
+# experiment parameters
+ITERATIONS = 1000
+MAP_MUTATION_RATE = 0.2
+FEASIBLE_SEL_RATE = 0.6
+POPSIZE = 10
+MAX_SET_SIZE = POPSIZE
+EMPTY_RATE = 0.5
+WALL_RATE = 0.4
+CORES = 5
+
+PERSONA = "R"  # runner [R], monster_killer [MK], treasure_collector [TC]
 
 
 # ascii char key
@@ -65,35 +84,23 @@ with open("template_map.txt") as f:
 
 
 class EvoMap():
-    def __init__(self, empty_rate, wall_rate, use_template, ext_cmd, persona, temp_chrome_folder, randomInit=False):
+    def __init__(self, randomInit=False):
         # ascii map rep of the level (2d array of characters)
         self.asc_map = []
         self.fitness = 0  # fitness value
         self.con = 0  # constraint value
         # behavior characteristic definition [runner, monster killer, treasure collector]
-        self.genome = persona
-        self.ext_cmd = ext_cmd
-        self.use_template = use_template
-        self.empty_rate = empty_rate
-        self.wall_rate = wall_rate
-        self.temp_chrome_folder = temp_chrome_folder
-        self.persona = persona
+        self.genome = PERSONA
+
         self.r = random.random()  # test key
         if randomInit:
             self.initRandomMap()
+            # print(self)
 
     # makes a copy of the map
 
     def clone(self):
-        new_map = EvoMap(
-            empty_rate=self.empty_rate,
-            wall_rate=self.wall_rate,
-            use_template=self.use_template,
-            ext_cmd=self.ext_cmd,
-            persona=self.persona,
-            temp_chrome_folder=self.temp_chrome_folder,
-            randomInit=False
-        )
+        new_map = EvoMap()
         new_map.asc_map = deepcopy(self.asc_map)
         new_map.fitness = self.fitness
         new_map.con = self.con
@@ -201,13 +208,14 @@ class EvoMap():
         update_map = deepcopy(m)
         # list of tuples
         charPos = list(zip(*np.where(np.array(update_map) == asc_char_map['portal'])))
+        random.shuffle(charPos)
 
         sansportals = choice_chars.copy()
         sansportals.remove(asc_char_map['portal'])
 
         # too many characters - reduce them
         if len(charPos) > 2:
-            random.shuffle(charPos)
+
             for p in charPos[2:]:
                 # skip two
                 # change the character at the current position to something else (not portal)
@@ -219,6 +227,8 @@ class EvoMap():
 
         # return the updated map with 2 or 0 portals
         charPos = list(zip(*np.where(np.array(update_map) == asc_char_map['portal'])))
+        if len(charPos) == 1:
+            print("here")
         return update_map
 
     # creates a random map (using the template or something else)
@@ -226,7 +236,7 @@ class EvoMap():
         am = []
 
         # use the empty template
-        if self.use_template:
+        if USE_TEMPLATE:
             am = deepcopy(template_map)
             width = len(am[1])
             height = len(am)
@@ -234,9 +244,9 @@ class EvoMap():
         else:
             width = random.randint(5, 20)
             height = random.randint(5, 20)
-            for hi in range(height):
+            for hi in range(h):
                 row = []
-                for wi in range(width):
+                for wi in range(w):
                     # make border of wall
                     if (wi == 0 or wi == (width-1) or hi == 0 or hi == (height-1)):
                         row.append(asc_char_map['wall'])
@@ -248,8 +258,8 @@ class EvoMap():
         # populate interior with random characters
         for hi in range(1, height-1):
             for wi in range(1, width-1):
-                if(random.random() > self.empty_rate):
-                    if(random.random() > self.wall_rate):
+                if(random.random() > EMPTY_RATE):
+                    if(random.random() > WALL_RATE):
                         c = random.choice(choice_chars)
                     else:
                         c = asc_char_map['wall']
@@ -285,7 +295,7 @@ class EvoMap():
         nm = self.portalConstraint(nm)
 
         # check character counts
-        #ch, cts = np.unique(np.array(nm), return_counts=True)
+        ch, cts = np.unique(np.array(nm), return_counts=True)
         # for k, v in zip(ch, cts):
             # print(f"{k} -> {v}")
         # print("-----------")
@@ -390,29 +400,21 @@ class EvoMap():
         pc = self.getCharNum(asc_char_map['player']) == 1
         ec = self.getCharNum(asc_char_map['exit']) == 1
         porc = self.getCharNum(asc_char_map['portal']) % 2 == 0
-        tc = 0
-        if pc:
-            # we need a hero for this to work
-            tc = self.ratioTraversible()
+        tc = self.ratioTraversible()
         # if pass all constraint checks, set to 1 otherwise 0
         if(pc and ec and porc and tc==1):
             self.con = 1
         else:
             self.con = tc
 
-    
-        # get the fitness value from the minidungeons simulator if valid constraints
+        # get the fitness value and behavior characteristic from the minidungeons simulator
         if self.con == 1:
             # file ID for parallelization
-            return self.getExtEval(f"evomap-{fileID}.txt")
-        else:
-            #print(f"{fileID} invalid map!")
-            print(f"#{fileID}: {self.r} - {self.con} - {self.fitness}")
-            return False
+            self.getExtEval(f"evomap-{fileID}.txt")
 
     # exports the ascii map to a text file specified
-    def map2File(self, fileloc):
-        with open(fileloc, 'w+') as f:
+    def map2File(self, filename):
+        with open(filename, 'w+') as f:
             mapstring = ""
             for r in self.asc_map:
                 mapstring += f"{''.join(r)}\n"
@@ -420,47 +422,32 @@ class EvoMap():
 
     # get the output from the external script call (to C# engine for MD2)
     def getExtEval(self, filename):
-        fileloc = os.path.join(self.temp_chrome_folder, filename)
-        self.map2File(fileloc)  # export the map out to be read by the engine
+        self.map2File(filename)  # export the map out to be read by the engine
         # run the script
-        return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}"]) == 0   #make sure it works
+        subprocess.call(["mono", f"{EXT_GMA_CMD}", f"{filename}"])
 
 
 # QD algorithm for storing feasible-infeasible maps
 class FI2Pop():
-    def __init__(self, config):
+    def __init__(self, mapMutRate, maxSets, feasSelRate):
         self.feas = []  # feasible population (passes constraints)
         self.infeas = []  # infeasible population (does not pass constraints)
         self.population = []  # initialized evolved population
-        self.mapMutate = config["MAP_MUTATION_RATE"]  # mutation rate for the maps
-        self.maxSets = config["MAX_SET_SIZE"]  # maximum size of the feasible/infeasible population
-        self.feasRate = config["FEASIBLE_SEL_RATE"] # probability to select from the feasible set for the new population    
-        self.ext_cmd = config["EXT_GMA_CMD"]
-        self.genome = config["PERSONA"]
-        self.use_template = config["USE_TEMPLATE"]
-        self.empty_rate = config["EMPTY_RATE"]
-        self.wall_rate = config["WALL_RATE"]
-        self.temp_chrome_folder = config["TEMP_CHROME_FOLDER"]
-        self.persona = config["PERSONA"]
-        self.cores = config["CORES"]
-        self.func = config["FITNESS_FUNCTION"]
-        self.output_folder = config["OUTPUT_FOLDER"]
+        self.mapMutate = mapMutRate  # mutation rate for the maps
+        self.maxSets = maxSets  # maximum size of the feasible/infeasible population
+        # probability to select from the feasible set for the new population
+        self.feasRate = feasSelRate
 
     # initialize the population for the evolution
     def initPop(self, popsize):
         self.population = []
         for p in range(popsize):
-            e = EvoMap(
-                empty_rate=self.empty_rate,
-                wall_rate=self.wall_rate,
-                use_template=self.use_template,
-                ext_cmd=self.ext_cmd,
-                persona=self.persona,
-                temp_chrome_folder=self.temp_chrome_folder,
-                randomInit=True
-            )
+            e = EvoMap(True)
             self.population.append(e)
-
+        '''
+		for p in self.population:
+			print(f"{''.join(p.asc_map[1])}\n> r:{p.r:.2f}\n")
+		'''
 
     # empty the archive
     def initArc(self):
@@ -468,20 +455,20 @@ class FI2Pop():
         self.infeas = []
 
     # export the archive to a folder of text files with the information set
-    def exportArc(self, folderLoc, label, expInfeas=True):
+    def exportArc(self, folderLoc, expInfeas=True):
         # make the folder if it doesn't exist yet
         os.makedirs(folderLoc, exist_ok=True)
 
         # export the feasible population
         for i in range(len(self.feas)):
             fm = self.feas[i]
-            fm.exportMap(os.path.join(folderLoc, f"{self.persona}-{i}-F_[{label}].txt"))
+            fm.exportMap(os.path.join(folderLoc, f"{PERSONA}-{i}-f.txt"))
 
         if expInfeas:
             # export the infeasible population
             for i in range(len(self.infeas)):
                 fm = self.infeas[i]
-                fm.exportMap(os.path.join(folderLoc, f"{self.persona}-{i}-I_[{label}].txt"))
+                fm.exportMap(os.path.join(folderLoc, f"{PERSONA}-{i}-i.txt"))
 
     # sort the population into feasible or infeasible sets based on map info
 
@@ -532,55 +519,29 @@ class FI2Pop():
     def evaluate_pop(self, parallel):
         if parallel:
             pop_map = [(i, p) for i, p in enumerate(self.population)]
-            with Pool(self.cores) as p:
+            with Pool(CORES) as p:
                 p.map(self.evaluate_chrome_helper, pop_map)
         else:
             i = 0
-            callres = {}
             for p in self.population:
-                callres[i] = p.evalMap(i)
+                p.evalMap(i)
                 i += 1
-        
-            # the script outputs a json file of the results - parse it
-            for i, chromosome in enumerate(self.population):
-                #failed, so skip
-                if not callres[i]:
-                    continue
-                filelabel = f"evomap-{i}"
-                jsonResFile = f"{filelabel}_results.txt"
-                jsonObj = None
-                jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
-                with open(jsonResLoc, 'r') as jf:
-                    jsonObj = json.load(jf)
+                # the script outputs a json file of the results - parse it
+        for i, chromosome in enumerate(self.feas):
+            filelabel = f"evomap-{i}"
+            jsonResFile = f"{filelabel}_results.txt"
+            jsonObj = None
+            with open(jsonResFile, 'r') as jf:
+                jsonObj = json.load(jf)
 
-                # pass json to the fitness function to get a value back
-                fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
-                chromosome.fitness = fitness
-                print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
-
+            # pass json to the fitness function to get a value back
+            fitness = evaluate_fitness(jsonObj, PERSONA)
+            chromosome.fitness = fitness
 
     def evaluate_chrome_helper(self, params):
         i = params[0]
         chromosome = params[1]
-        res = chromosome.evalMap(i)
-
-        #invalid map (failed program or bad ascii)
-        if not res:
-            #print(f"{i} failed :(")
-            return
-
-        #parse the result from the output file
-        filelabel = f"evomap-{i}"
-        jsonResFile = f"{filelabel}_results.txt"
-        jsonObj = None
-        jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
-        with open(jsonResLoc, 'r') as jf:
-            jsonObj = json.load(jf)
-
-        # pass json to the fitness function to get a value back
-        fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
-        chromosome.fitness = fitness
-        print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
+        chromosome.evalMap(i)
 
     # evolve the population and sort into feasible infeasible populations
     # mutate, evaluate, sort, repeat
@@ -588,18 +549,13 @@ class FI2Pop():
         # reset the population and archive
         self.initPop(popsize)
         self.initArc()
-        os.makedirs(self.temp_chrome_folder, exist_ok=True)
-
+        # for p in self.population:
+        #	print(p)
 
         #remove previous evomap files and results
-        past_evofiles = [os.path.join(self.temp_chrome_folder,f) for f in os.listdir(self.temp_chrome_folder) if re.match('evomap-.+\.txt',f)]
-        print (f"( Deleting {len(past_evofiles)} previous evomap files... )")
+        past_evofiles = [f for f in os.listdir('.') if re.match('evomap-.+\.txt',f)]
         for pevo in past_evofiles:
-            os.remove(pevo)
-
-        #for tracking the fitness values over time
-        best_fit = []
-        avg_fit = []
+        	os.remove(pevo)
 
         # start the iterations
         with tqdm(total=iterations) as pbar:
@@ -609,73 +565,44 @@ class FI2Pop():
                     p.mutateMap(self.mapMutate)
 
                 # evaluate the new population
+                # i = 0
+
                 self.evaluate_pop(parallel)
-                for p in self.population:
-                    print(p)
-
-                #print(f"pop: {[f'{e.con}-{e.fitness}' for e in self.population]}")
-
-                #grab the "elite" and average fitness from the population
-                sortedPop = sorted(self.population,reverse=True)
-                bestPopFit = sortedPop[0].fitness
-                avgPopFit = np.average([e.fitness for e in self.population])
-
-                best_fit.append(bestPopFit)
-                avg_fit.append(avgPopFit)
-
-                #confirm sorting
-                #print([f"{e.con}-{e.fitness}" for e in self.population])
-                #print(f"sorted pop: {[f'{e.con}-{e.fitness}' for e in sortedPop]}")
 
                 # sort into feasible and infeasible
                 self.sortPop()
 
                 # based on the iteration number - export to files
                 if outputArc and (i+1) % 100 == 0:
-                    self.exportArc(self.output_folder,f"Gen-{(i+1)}")
+                    self.exportArc(OUTPUT_FOLDER)
 
                 # select a new population
                 self.newPop(popsize, self.feasRate)
 
                 pbar.update(1)
-                pbar.set_description(f"Best: {bestPopFit} | Avg: {avgPopFit}")
-
-        #export the best and averages as a csv in the archive folder
-        with open(os.path.join(self.output_folder,'best_fit.csv'),'w+') as bf:
-            c = csv.writer(bf)
-            c.writerow(best_fit)
-
-        with open(os.path.join(self.output_folder,'avg_fit.csv'),'w+') as af:
-            c = csv.writer(af)
-            c.writerow(avg_fit)
-
+                pbar.set_description(
+                    f"F: {[o.fitness for o in self.feas]} | Is: {[e.canTraverse() for e in self.infeas]}")
 
 
 # run the main program if using this straight
 if __name__ == "__main__":
-    with open("config.yml", "r") as f:
-        config = yaml.safe_load(f)
-    expset = FI2Pop(config)
+    # print(f"$ {os.popen('python test.py Milk').read()}")
+
+    expset = FI2Pop(MAP_MUTATION_RATE, MAX_SET_SIZE, FEASIBLE_SEL_RATE)
 
     print(" -------------   MD2 EVOLUTIONARY FI2POP EXPERIMENT   -------------")
     print("")
     print(
-        f" ++                  PERSONA:  [ {config['PERSONA']} ]                    ++")
+        f" ++                  PERSONA:  [ {PERSONA} ]                    ++")
     print("")
-    print(f"> ARCHIVE OUTPUT_FOLDER:     {config['OUTPUT_FOLDER']}")
-    print(f"> TEMP EVO OUTPUT_FOLDER:    {config['TEMP_CHROME_FOLDER']}")
-    print("")
-    print(f"> MAP MUTATION RATE:         {config['MAP_MUTATION_RATE']}")
-    print(f"> EMPTY CHAR RATE:           {config['EMPTY_RATE']}")
-    print(f"> WALL CHAR RATE:            {config['WALL_RATE']}")
-    print(f"> MAX IN/FEASIBLE POP SIZE:  {config['MAX_SET_SIZE']}")
-    print(f"> FEASIBLE SELECTION RATE:   {config['FEASIBLE_SEL_RATE']}")
-    print("")
-    print(f"> POPULATION SIZE:           {config['POPSIZE']}")
-    print(f"> ITERATIONS:                {config['ITERATIONS']}")
-    print(f"> PARALLEL:                  {config['PARALLEL']}")
-    if config['PARALLEL']:
-        print(f"> CORES:                     {config['CORES']}")
+    print(f"> POPULATION SIZE:           {POPSIZE}")
+    print(f"> ITERATIONS:                {ITERATIONS}")
+    print(f"> OUTPUT_FOLDER:             {OUTPUT_FOLDER}")
+    print(f"> MAP MUTATION RATE:         {MAP_MUTATION_RATE}")
+    print(f"> EMPTY CHAR RATE:           {EMPTY_RATE}")
+    print(f"> WALL CHAR RATE:            {WALL_RATE}")
+    print(f"> MAX IN/FEASIBLE POP SIZE:  {MAX_SET_SIZE}")
+    print(f"> FEASIBLE SELECTION RATE:   {FEASIBLE_SEL_RATE}")
     print("")
 
-    expset.evolvePop(config["POPSIZE"], config["ITERATIONS"], parallel=config['PARALLEL'], outputArc=config['OUTPUT_ARC'])
+    expset.evolvePop(POPSIZE, ITERATIONS, parallel=True, outputArc=True)

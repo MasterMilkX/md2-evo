@@ -6,14 +6,14 @@ OUTPUT_FOLDER : MD2_evo-archive  # output folder for the exported levels created
 TEMP_CHROME_FOLDER : temp
 
 # experiment parameters
-ITERATIONS : 1000
+ITERATIONS : 5
 MAP_MUTATION_RATE : 0.2
 FEASIBLE_SEL_RATE : 0.6
-POPSIZE : 50
+POPSIZE : 5
 MAX_SET_SIZE : 50
 EMPTY_RATE : 0.5
 WALL_RATE : 0.4
-CORES : 10
+CORES : 2
 FITNESS_FUNCTION: success
 
 PERSONA : R # runner [R], monster_killer [MK], treasure_collector [TC]
