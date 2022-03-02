@@ -1,0 +1,13 @@
+XXXXXXXXXX
+X RbRoeMoX
+X  ooRPoPX
+X  M MPRbX
+XHmXtTXb X
+Xo tTm boX
+X mP XXt X
+Xb  obRXbX
+XXXXXXXXXX
+%---%
+fitness:0.975
+con:1
+genome:R
