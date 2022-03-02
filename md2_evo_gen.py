@@ -13,6 +13,7 @@ import os
 from tqdm import tqdm
 import json
 from copy import deepcopy
+from multiprocessing import Pool
 
 
 #global constants
@@ -30,6 +31,7 @@ POPSIZE = 10
 MAX_SET_SIZE = POPSIZE
 EMPTY_RATE = 0.5
 WALL_RATE = 0.4
+CORES = 5
 
 PERSONA = "runner"  # runner, monster_killer, treasure_collector
 
@@ -480,6 +482,22 @@ class FI2Pop():
         # reset the population
         self.population = newp
 
+    def evaluate_pop(self, parallel):
+        if parallel:
+            pop_map = [(i, p) for i, p in enumerate(self.population)]
+            with Pool(CORES) as p:
+                p.map(self.evaluate_chrome_helper, pop_map)
+        else:
+            i = 0
+            for p in self.population:
+                p.evalMap(i)
+                i += 1
+
+    def evaluate_chrome_helper(self, params):
+        i = params[0]
+        chromosome = params[1]
+        chromosome.evalMap(i)
+
     # evolve the population and sort into feasible infeasible populations
     #mutate, evaluate, sort, repeat
     def evolvePop(self, popsize, iterations, parallel=False, outputArc=True):
@@ -499,10 +517,8 @@ class FI2Pop():
 
                 # evaluate the new population
                 i = 0
-                for p in self.population:
-                    # PARALLELIZE HERE
-                    p.evalMap(i)
-                    i += 1
+
+                self.evaluate_pop(parallel)
 
                 # sort into feasible and infeasible
                 self.sortPop()
@@ -540,4 +556,4 @@ if __name__ == "__main__":
     print(f"> FEASIBLE SELECTION RATE:   {FEASIBLE_SEL_RATE}")
     print("")
 
-    expset.evolvePop(POPSIZE, ITERATIONS)
+    expset.evolvePop(POPSIZE, ITERATIONS, parallel=True)
