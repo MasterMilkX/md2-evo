@@ -31,7 +31,7 @@ OUTPUT_FOLDER = "MD2_evo-archive"  # output folder for the exported levels creat
 ITERATIONS = 1000
 MAP_MUTATION_RATE = 0.2
 FEASIBLE_SEL_RATE = 0.6
-POPSIZE = 1
+POPSIZE = 50
 MAX_SET_SIZE = POPSIZE
 EMPTY_RATE = 0.5
 WALL_RATE = 0.4
@@ -72,6 +72,12 @@ template_map = []
 for r in template_map_str.split("\n"):
     y = [x for x in r]
     template_map.append(y)
+with open("template_map.txt") as f:
+    template_map = []
+    mapfile = f.read()
+    for line in mapfile.split("\n"):
+        row = [char for char in line]
+        template_map.append(row)
 
 # stores the minidungeons2 2d array ascii maps with fitness value and behavior characteristic
 
@@ -210,19 +216,21 @@ class EvoMap():
         if len(charPos) > 2:
             sole_char = random.choices(charPos, k=2)
 
-            for p in charPos:
-                # skip the one char
-                if p in sole_char:
-                    continue
+            for p in charPos[2:]:
+                # skip two
                 # change the character at the current position to something else (not portal)
                 update_map[p[0]][p[1]] = random.choice(sansportals)
-
+            
         # no pair - remove the single
         if len(charPos) == 1:
             update_map[charPos[0][0]][charPos[0]
                                       [1]] = random.choice(sansportals)
 
         # return the updated map with 2 or 0 portals
+        charPos = list(
+                zip(*np.where(np.array(update_map) == asc_char_map['portal'])))
+        if len(charPos) == 1:
+            print("here")
         return update_map
 
     # creates a random map (using the template or something else)
@@ -232,17 +240,17 @@ class EvoMap():
         # use the empty template
         if USE_TEMPLATE:
             am = deepcopy(template_map)
-            w = len(am[1])
-            h = len(am)
+            width = len(am[1])
+            height = len(am)
         # create a whole new map with different dimensions
         else:
-            w = random.randint(5, 20)
-            h = random.randint(5, 20)
+            width = random.randint(5, 20)
+            height = random.randint(5, 20)
             for hi in range(h):
                 row = []
                 for wi in range(w):
                     # make border of wall
-                    if (wi == 0 or wi == (w-1) or hi == 0 or hi == (h-1)):
+                    if (wi == 0 or wi == (width-1) or hi == 0 or hi == (height-1)):
                         row.append(asc_char_map['wall'])
                     # interior
                     else:
@@ -250,8 +258,8 @@ class EvoMap():
                 am.append(row)
 
         # populate interior with random characters
-        for hi in range(1, h-1):
-            for wi in range(1, w-1):
+        for hi in range(1, height-1):
+            for wi in range(1, width-1):
                 if(random.random() > EMPTY_RATE):
                     if(random.random() > WALL_RATE):
                         c = random.choice(choice_chars)
@@ -261,7 +269,6 @@ class EvoMap():
                 else:
                     c = asc_char_map['empty']
                 am[hi][wi] = c
-
         #########    PRESET CONSTRAINTS     ########
 
         # make sure there is only 1 player and 1 exit
@@ -291,9 +298,9 @@ class EvoMap():
 
         # check character counts
         ch, cts = np.unique(np.array(nm), return_counts=True)
-        for k, v in zip(ch, cts):
-            print(f"{k} -> {v}")
-        print("-----------")
+        # for k, v in zip(ch, cts):
+            # print(f"{k} -> {v}")
+        # print("-----------")
 
         # replace with the new map
         self.asc_map = nm
@@ -327,7 +334,7 @@ class EvoMap():
             zip(*np.where(np.array(m) != asc_char_map['wall'])))  # y,x
 
         heroStart = list(
-            zip(*np.where(np.array(m) != asc_char_map['player'])))[0]
+            zip(*np.where(np.array(m) == asc_char_map['player'])))[0]
         reached = {}
         for e in emptyPos:
             # print(f"{e} -> {m[e[0]][e[1]]}")
@@ -339,16 +346,16 @@ class EvoMap():
         # flood fill with BFS
         while len(q) > 0:
             qi = q.pop()
-            reached[qi] = True
-
+            if not reached[qi]:
+                reached[qi] = True
+                total_reached += 1
             # get the neighbors and add to queue if valid
             n = self.getNeighbors(qi, m)
             for ni in n:
                 if m[ni[0]][ni[1]] != asc_char_map['wall'] and reached[ni] == False:
-                    total_reached += 1
                     q.append(ni)
-
-        return total_reached / (1.0 * len(emptyPos))
+        tc_result = total_reached / (1.0 * len(emptyPos))
+        return tc_result
 
     # check if the map can be traversed
 
@@ -396,15 +403,16 @@ class EvoMap():
         ec = self.getCharNum(asc_char_map['exit']) == 1
         porc = self.getCharNum(asc_char_map['portal']) % 2 == 0
         tc = self.ratioTraversible()
-
         # if pass all constraint checks, set to 1 otherwise 0
-        if(pc and ec and porc and tc):
+        if(pc and ec and porc and tc==1):
             self.con = 1
         else:
             self.con = tc
 
         # get the fitness value and behavior characteristic from the minidungeons simulator
-        self.getExtEval(f"evomap-{fileID}.txt")  # file ID for parallelization
+        if self.con == 1:
+            # file ID for parallelization
+            self.getExtEval(f"evomap-{fileID}.txt")
 
     # exports the ascii map to a text file specified
     def map2File(self, filename):
@@ -419,17 +427,6 @@ class EvoMap():
         self.map2File(filename)  # export the map out to be read by the engine
         # run the script
         subprocess.call(["mono", f"{EXT_GMA_CMD}", f"{filename}"])
-
-        # the script outputs a json file of the results - parse it
-        filelabel = filename.replace('.txt', '')
-        jsonResFile = f"{filelabel}_results.txt"
-        jsonObj = None
-        with open(jsonResFile, 'r') as jf:
-            jsonObj = json.load(jf)
-
-        # pass json to the fitness function to get a value back
-        fitness = evaluate_fitness(jsonObj, PERSONA)
-        self.fitness = fitness
 
 
 # QD algorithm for storing feasible-infeasible maps
@@ -460,18 +457,18 @@ class FI2Pop():
         self.infeas = []
 
     # export the archive to a folder of text files with the information set
-    def exportArc(self, folderLoc, expInfeas=False):
+    def exportArc(self, folderLoc, expInfeas=True):
         # make the folder if it doesn't exist yet
         os.makedirs(folderLoc, exist_ok=True)
 
         # export the feasible population
-        for i in range(self.feas):
+        for i in range(len(self.feas)):
             fm = self.feas[i]
             fm.exportMap(os.path.join(folderLoc, f"{PERSONA}-{i}-f.txt"))
 
         if expInfeas:
             # export the infeasible population
-            for i in range(self.infeas[g]):
+            for i in range(len(self.infeas)):
                 fm = self.infeas[i]
                 fm.exportMap(os.path.join(folderLoc, f"{PERSONA}-{i}-i.txt"))
 
@@ -531,6 +528,17 @@ class FI2Pop():
             for p in self.population:
                 p.evalMap(i)
                 i += 1
+                # the script outputs a json file of the results - parse it
+        for i, chromosome in enumerate(self.feas):
+            filelabel = f"evomap-{i}"
+            jsonResFile = f"{filelabel}_results.txt"
+            jsonObj = None
+            with open(jsonResFile, 'r') as jf:
+                jsonObj = json.load(jf)
+
+            # pass json to the fitness function to get a value back
+            fitness = evaluate_fitness(jsonObj, PERSONA)
+            chromosome.fitness = fitness
 
     def evaluate_chrome_helper(self, params):
         i = params[0]
@@ -543,7 +551,6 @@ class FI2Pop():
         # reset the population and archive
         self.initPop(popsize)
         self.initArc()
-
         # for p in self.population:
         #	print(p)
 
@@ -555,7 +562,7 @@ class FI2Pop():
                     p.mutateMap(self.mapMutate)
 
                 # evaluate the new population
-                i = 0
+                # i = 0
 
                 self.evaluate_pop(parallel)
 
@@ -564,7 +571,7 @@ class FI2Pop():
 
                 # based on the iteration number - export to files
                 if outputArc and (i+1) % 100 == 0:
-                    exportArc(OUTPUT_FOLDER)
+                    self.exportArc(OUTPUT_FOLDER)
 
                 # select a new population
                 self.newPop(popsize, self.feasRate)
@@ -595,4 +602,4 @@ if __name__ == "__main__":
     print(f"> FEASIBLE SELECTION RATE:   {FEASIBLE_SEL_RATE}")
     print("")
 
-    expset.evolvePop(POPSIZE, ITERATIONS, parallel=True)
+    expset.evolvePop(POPSIZE, ITERATIONS, parallel=True, outputArc=True)
