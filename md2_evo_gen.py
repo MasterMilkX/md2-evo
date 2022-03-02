@@ -406,8 +406,10 @@ class EvoMap():
 	# exports the ascii map to a text file specified
 	def map2File(self, filename):
 		with open(filename, 'w+') as f:
+			s = ""
 			for r in self.asc_map:
-				f.write(f"{''.join(r)}\n")
+				s += f"{''.join(r)}\n"
+			f.write(s.strip())
 
 	# get the output from the external script call (to C# engine for MD2)
 	def getExtEval(self, filename):
