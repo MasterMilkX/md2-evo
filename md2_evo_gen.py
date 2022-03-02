@@ -530,7 +530,9 @@ class FI2Pop():
         if parallel:
             pop_map = [(i, p) for i, p in enumerate(self.population)]
             with Pool(self.cores) as p:
-                p.map(self.evaluate_chrome_helper, pop_map)
+                results = p.map(self.evaluate_chrome_helper, pop_map)
+            for (i, con) in results:
+                self.population[i].con = con
         else:
             i = 0
             callres = {}
@@ -540,29 +542,28 @@ class FI2Pop():
         
         # the script outputs a json file of the results - parse it
         for i, chromosome in enumerate(self.population):
-            filelabel = f"evomap-{i}"
-            jsonResFile = f"{filelabel}_results.txt"
-            jsonObj = None
-            jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
+            #failed, so skip
+            try:
+                filelabel = f"evomap-{i}"
+                jsonResFile = f"{filelabel}_results.txt"
+                jsonObj = None
+                jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
+                with open(jsonResLoc, 'r') as jf:
+                    jsonObj = json.load(jf)
 
-            #no result so skip
-            if(not os.path.exists(jsonResLoc)):
+                # pass json to the fitness function to get a value back
+                fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
+                chromosome.fitness = fitness
+                # print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
+            except Exception:
                 continue
-
-            with open(jsonResLoc, 'r') as jf:
-                jsonObj = json.load(jf)
-
-            # pass json to the fitness function to get a value back
-            fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
-            chromosome.fitness = fitness
-            chromosome.con = 1
-            #print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
 
 
     def evaluate_chrome_helper(self, params):
         i = params[0]
         chromosome = params[1]
-        res = chromosome.evalMap(i)
+        chromosome.evalMap(i)
+        return (i, chromosome.con)
 
     # evolve the population and sort into feasible infeasible populations
     # mutate, evaluate, sort, repeat

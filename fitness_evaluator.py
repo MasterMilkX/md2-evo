@@ -34,24 +34,27 @@ def eval_fitness_success(result_obj, target_persona, cascading):
 
         if persona == target_persona:
             if win_or_lose == 0:
-                target_fitness = 1 * target_weight
+                target_fitness = 1
             else:
                 target_fitness += (end_dist_to_exit /
-                                   longest_path) * target_weight
+                                   longest_path)
         else:
             # divide in half to make room for 2 personas
-            non_target_fitness += 0.5 * \
-                (1 - target_weight) * (10 - health_left)
-
+            if health_left < 0:
+                health_left = 0
+            non_target_fitness +=  (10 - health_left)
+    non_target_fitness = non_target_fitness / 20
     # cascading
     if cascading:
-        if target_fitness != 0.5:
+        if target_fitness != 1:
             fitness = target_fitness
         else:
-            fitness = target_fitness + non_target_fitness
+            fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
     else:
-        fitness = target_fitness + non_target_fitness
+        fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
 
+    if fitness > 1:
+        print("here")
     return fitness
 
 
