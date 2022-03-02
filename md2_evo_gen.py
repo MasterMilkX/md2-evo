@@ -348,8 +348,7 @@ class EvoMap():
         m = self.asc_map
 
         # get all the empty tiles and set them as unreached
-        emptyPos = list(
-            zip(*np.where(np.array(m) != asc_char_map['wall'])))  # y,x
+        emptyPos = list(zip(*np.where(np.array(m) != asc_char_map['wall'])))  # y,x
 
         reached = {}
         for e in emptyPos:
@@ -381,8 +380,7 @@ class EvoMap():
     def getCharNum(self, c):
         return len(list(zip(*np.where(np.array(self.asc_map) == c))))
 
-    # evaluate the map for its constraint value, fitness value, and behavior characteristic
-    def evalMap(self, fileID):
+    def checkCon(self):
         # check the constraints first
         pc = self.getCharNum(asc_char_map['player']) == 1
         ec = self.getCharNum(asc_char_map['exit']) == 1
@@ -397,14 +395,15 @@ class EvoMap():
         else:
             self.con = tc
 
-    
+    # evaluate the map for its constraint value, fitness value, and behavior characteristic
+    def evalMap(self, fileID):
         # get the fitness value from the minidungeons simulator if valid constraints
         if self.con == 1:
             # file ID for parallelization
             return self.getExtEval(f"evomap-{fileID}.txt")
         else:
             #print(f"{fileID} invalid map!")
-            print(f"#{fileID}: {self.r} - {self.con} - {self.fitness}")
+            #print(f"#{fileID}: {self.r} - {self.con} - {self.fitness}")
             return False
 
     # exports the ascii map to a text file specified
@@ -527,6 +526,10 @@ class FI2Pop():
         self.population = newp
 
     def evaluate_pop(self, parallel):
+        #set the constraint value for the population
+        for p in self.population:
+            p.checkCon()
+
         if parallel:
             pop_map = [(i, p) for i, p in enumerate(self.population)]
             with Pool(self.cores) as p:
@@ -593,8 +596,8 @@ class FI2Pop():
 
                 # evaluate the new population
                 self.evaluate_pop(parallel)
-                for p in self.population:
-                    print(p)
+                # for p in self.population:
+                #     print(p)
 
                 #print(f"pop: {[f'{e.con}-{e.fitness}' for e in self.population]}")
 
