@@ -441,6 +441,7 @@ class FI2Pop():
         self.cores = config["CORES"]
         self.func = config["FITNESS_FUNCTION"]
         self.output_folder = config["OUTPUT_FOLDER"]
+        self.output_interval = config["OUTPUT_INTERVAL"]
 
     # initialize the population for the evolution
     def initPop(self, popsize):
@@ -614,7 +615,7 @@ class FI2Pop():
                 self.sortPop()
 
                 # based on the iteration number - export to files
-                if outputArc and (i+1) % 100 == 0:
+                if outputArc and (i+1) % self.output_interval == 0:
                     self.exportArc(self.output_folder,f"Gen-{(i+1)}")
 
                 # select a new population

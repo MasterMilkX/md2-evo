@@ -53,7 +53,7 @@ def eval_fitness_success(result_obj, target_persona, cascading):
     else:
         fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
 
-    if fitness > 1:
+    if fitness == 1:
         print("here")
     return fitness
 
