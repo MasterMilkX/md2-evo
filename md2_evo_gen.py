@@ -97,17 +97,14 @@ class EvoMap():
         new_map.asc_map = deepcopy(self.asc_map)
         new_map.fitness = self.fitness
         new_map.con = self.con
-        new_map.r = self.r
         new_map.genome = self.genome
 
         return new_map
 
     # comparison function
     def __lt__(self, other):
-        if self.con < other.con:
-            return True
-        elif self.con > other.con:
-            return False
+        if self.con != other.con:
+            return self.con < other.con
         else:
             return self.fitness < other.fitness
 
@@ -541,46 +538,31 @@ class FI2Pop():
                 callres[i] = p.evalMap(i)
                 i += 1
         
-            # the script outputs a json file of the results - parse it
-            for i, chromosome in enumerate(self.population):
-                #failed, so skip
-                if not callres[i]:
-                    continue
-                filelabel = f"evomap-{i}"
-                jsonResFile = f"{filelabel}_results.txt"
-                jsonObj = None
-                jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
-                with open(jsonResLoc, 'r') as jf:
-                    jsonObj = json.load(jf)
+        # the script outputs a json file of the results - parse it
+        for i, chromosome in enumerate(self.population):
+            filelabel = f"evomap-{i}"
+            jsonResFile = f"{filelabel}_results.txt"
+            jsonObj = None
+            jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
 
-                # pass json to the fitness function to get a value back
-                fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
-                chromosome.fitness = fitness
-                print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
+            #no result so skip
+            if(not os.path.exists(jsonResLoc)):
+                continue
+
+            with open(jsonResLoc, 'r') as jf:
+                jsonObj = json.load(jf)
+
+            # pass json to the fitness function to get a value back
+            fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
+            chromosome.fitness = fitness
+            chromosome.con = 1
+            #print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
 
 
     def evaluate_chrome_helper(self, params):
         i = params[0]
         chromosome = params[1]
         res = chromosome.evalMap(i)
-
-        #invalid map (failed program or bad ascii)
-        if not res:
-            #print(f"{i} failed :(")
-            return
-
-        #parse the result from the output file
-        filelabel = f"evomap-{i}"
-        jsonResFile = f"{filelabel}_results.txt"
-        jsonObj = None
-        jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
-        with open(jsonResLoc, 'r') as jf:
-            jsonObj = json.load(jf)
-
-        # pass json to the fitness function to get a value back
-        fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
-        chromosome.fitness = fitness
-        print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
 
     # evolve the population and sort into feasible infeasible populations
     # mutate, evaluate, sort, repeat
