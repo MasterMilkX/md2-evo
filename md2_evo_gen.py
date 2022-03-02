@@ -533,9 +533,7 @@ class FI2Pop():
         if parallel:
             pop_map = [(i, p) for i, p in enumerate(self.population)]
             with Pool(self.cores) as p:
-                results = p.map(self.evaluate_chrome_helper, pop_map)
-            for (i, con) in results:
-                self.population[i].con = con
+                p.map(self.evaluate_chrome_helper, pop_map)
         else:
             i = 0
             callres = {}
@@ -566,7 +564,6 @@ class FI2Pop():
         i = params[0]
         chromosome = params[1]
         chromosome.evalMap(i)
-        return (i, chromosome.con)
 
     # evolve the population and sort into feasible infeasible populations
     # mutate, evaluate, sort, repeat
