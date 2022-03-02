@@ -95,8 +95,8 @@ class EvoMap():
             randomInit=False
         )
         new_map.asc_map = deepcopy(self.asc_map)
-        new_map.fitness = self.fitness
-        new_map.con = self.con
+        new_map.fitness = 0
+        new_map.con = 0
         new_map.genome = self.genome
 
         return new_map
@@ -403,7 +403,7 @@ class EvoMap():
             return self.getExtEval(f"evomap-{fileID}.txt")
         else:
             #print(f"{fileID} invalid map!")
-            #print(f"#{fileID}: {self.r} - {self.con} - {self.fitness}")
+            print(f"#{fileID}: {self.r} - {self.con:.2f} - {self.fitness:.2f}")
             return False
 
     # exports the ascii map to a text file specified
@@ -516,11 +516,11 @@ class FI2Pop():
             # select from the feasible population
             if r <= feasRate and len(self.feas) > 0:
                 we = list(range(len(self.feas), 0, -1))
-                newp.append(random.choices(self.feas, weights=we, k=1)[0])
+                newp.append(random.choices(self.feas, weights=we, k=1)[0].clone())
             # select from the infeasible population
             else:
                 we = list(range(len(self.infeas), 0, -1))
-                newp.append(random.choices(self.infeas, weights=we, k=1)[0])
+                newp.append(random.choices(self.infeas, weights=we, k=1)[0].clone())
 
         # reset the population
         self.population = newp
@@ -555,7 +555,7 @@ class FI2Pop():
                 # pass json to the fitness function to get a value back
                 fitness = evaluate_fitness(jsonObj, self.persona, func=self.func)
                 chromosome.fitness = fitness
-                # print(f"#{i}: {chromosome.r} - {chromosome.con} - {chromosome.fitness}")
+                print(f"#{i}: {chromosome.r} - {chromosome.con:.2f} - {chromosome.fitness:.2f}")
             except Exception:
                 continue
 
@@ -573,13 +573,6 @@ class FI2Pop():
         self.initArc()
         os.makedirs(self.temp_chrome_folder, exist_ok=True)
 
-
-        #remove previous evomap files and results
-        past_evofiles = [os.path.join(self.temp_chrome_folder,f) for f in os.listdir(self.temp_chrome_folder) if re.match('evomap-.+\.txt',f)]
-        print (f"( Deleting {len(past_evofiles)} previous evomap files... )")
-        for pevo in past_evofiles:
-            os.remove(pevo)
-
         #for tracking the fitness values over time
         best_fit = []
         avg_fit = []
@@ -587,14 +580,21 @@ class FI2Pop():
         # start the iterations
         with tqdm(total=iterations) as pbar:
             for i in range(iterations):
+
+                #remove previous evomap files and results
+                past_evofiles = [os.path.join(self.temp_chrome_folder,f) for f in os.listdir(self.temp_chrome_folder) if re.match('evomap-.+\.txt',f)]
+                print (f"( Deleting {len(past_evofiles)} previous evomap files... )")
+                for pevo in past_evofiles:
+                    os.remove(pevo)
+
                 # take current population and mutate them
                 for p in self.population:
                     p.mutateMap(self.mapMutate)
 
                 # evaluate the new population
                 self.evaluate_pop(parallel)
-                # for p in self.population:
-                #     print(p)
+                for p in self.population:
+                    print(p)
 
                 #print(f"pop: {[f'{e.con}-{e.fitness}' for e in self.population]}")
 
