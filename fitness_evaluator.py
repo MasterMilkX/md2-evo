@@ -32,13 +32,14 @@ def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
 
         result_persona = result_obj[persona]
         level_report = result_persona["levelReport"]
-        win_or_lose = int(level_report["exitUtility"]) and level_report["alive"]
+        exit_utility = int(level_report["exitUtility"]) 
+        alive = level_report["alive"]
         end_dist_to_exit = level_report["endDistToExit"]
         longest_path = level_report["longestPath"]
         health_left = level_report["health"]
 
         if persona == target_persona:
-            if win_or_lose == 0:
+            if exit_utility == 1.0 and alive:
                 target_fitness = 1
             else:
                 target_fitness += (end_dist_to_exit /
