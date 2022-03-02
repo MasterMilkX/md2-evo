@@ -23,7 +23,7 @@ def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", ca
 
 def eval_fitness_entropy(asc_map):
     asc_map = np.array(asc_map)
-    return 1 - entr_fitness(asc_map)
+    return entr_fitness(asc_map)
 
 def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
     target_fitness = 0.0
