@@ -296,12 +296,14 @@ class EvoMap():
         emptyPos = list(
             zip(*np.where(np.array(m) != asc_char_map['wall'])))  # y,x
 
+        heroStart = list(
+            zip(*np.where(np.array(m) != asc_char_map['player'])))[0]
         reached = {}
         for e in emptyPos:
             #print(f"{e} -> {m[e[0]][e[1]]}")
             reached[e] = False
 
-        s = random.choice(emptyPos)  # start at a random empty tile position
+        s = heroStart  # start at a random empty tile position
         q = [s]  # initialize queue
 
         # flood fill with BFS
