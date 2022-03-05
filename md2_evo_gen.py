@@ -595,8 +595,8 @@ class FI2Pop():
 
                 # evaluate the new population
                 self.evaluate_pop(parallel)
-                for p in self.population:
-                    print(p)
+                # for p in self.population:
+                #     print(p)
 
                 #print(f"pop: {[f'{e.con}-{e.fitness}' for e in self.population]}")
 
