@@ -31,7 +31,7 @@ asc_char_map['blob'] = "b"
 asc_char_map['minotaur'] = "m"
 asc_char_map['exit'] = "e"
 asc_char_map['trap'] = "t"
-asc_char_map['treasure2'] = "T"
+asc_char_map['treasure'] = "T"
 asc_char_map['potion'] = "P"
 asc_char_map['portal'] = "p"
 asc_char_map['ogre'] = "M"
@@ -39,13 +39,9 @@ asc_char_map['ogre2'] = "o"
 asc_char_map['witch'] = "R"
 
 
-# make choice characters (non-player and exit) and list of all characters
-choice_chars = []
-all_chars = []
-for k, v in asc_char_map.items():
-    if k not in ['player', 'exit']:
-        choice_chars.append(v)
-    all_chars.append(v)
+# makes initial random characters for map generation and mutation selection characters
+INIT_ASCII_TILES = []
+MUT_ASCII_TILES = []
 
 
 # use this as the level template or import it from a file
@@ -186,7 +182,7 @@ class EvoMap():
                 if p == sole_char:
                     continue
                 # change the character at the current position to something else
-                update_map[p[0]][p[1]] = random.choice(choice_chars)
+                update_map[p[0]][p[1]] = random.choice(MUT_ASCII_TILES)
 
         # not enough of the character found
         elif len(charPos) == 0:
@@ -203,8 +199,9 @@ class EvoMap():
         # list of tuples
         charPos = list(zip(*np.where(np.array(update_map) == asc_char_map['portal'])))
 
-        sansportals = choice_chars.copy()
-        sansportals.remove(asc_char_map['portal'])
+        sansportals = MUT_ASCII_TILES.copy()
+        if asc_char_map['portal'] in MUT_ASCII_TILES:
+            sansportals.remove(asc_char_map['portal'])
 
         # too many characters - reduce them
         if len(charPos) > 2:
@@ -251,7 +248,7 @@ class EvoMap():
             for wi in range(1, width-1):
                 if(random.random() > self.empty_rate):
                     if(random.random() > self.wall_rate):
-                        c = random.choice(choice_chars)
+                        c = random.choice(INIT_ASCII_TILES)
                     else:
                         c = asc_char_map['wall']
 
@@ -276,7 +273,7 @@ class EvoMap():
         for hi in range(1, len(nm)-1):
             for wi in range(1, len(nm[0])-1):
                 if(random.random() <= mutRate):
-                    nm[hi][wi] = random.choice(all_chars)
+                    nm[hi][wi] = random.choice(MUT_ASCII_TILES)
 
         # check for constraints
         nm = self.singleConstraint(nm, 'player')
@@ -598,8 +595,8 @@ class FI2Pop():
 
                 # evaluate the new population
                 self.evaluate_pop(parallel)
-                # for p in self.population:
-                #     print(p)
+                for p in self.population:
+                    print(p)
 
                 #print(f"pop: {[f'{e.con}-{e.fitness}' for e in self.population]}")
 
@@ -645,6 +642,15 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
     expset = FI2Pop(config)
 
+    #set choice tiles for initializing map and mutating map
+    INIT_ASCII_TILES = []
+    MUT_ASCII_TILES = []
+    for t in config['INIT_ASCII_TILES']:
+        INIT_ASCII_TILES.append(asc_char_map[t])
+    for t in config['MUT_ASCII_TILES']:
+        MUT_ASCII_TILES.append(asc_char_map[t])
+
+
     print(" -------------   MD2 EVOLUTIONARY FI2POP EXPERIMENT   -------------")
     print("")
     print(
@@ -656,6 +662,9 @@ if __name__ == "__main__":
     print(f"> MAP MUTATION RATE:         {config['MAP_MUTATION_RATE']}")
     print(f"> EMPTY CHAR RATE:           {config['EMPTY_RATE']}")
     print(f"> WALL CHAR RATE:            {config['WALL_RATE']}")
+    print(f"> INIT ASCII TILES:          {config['INIT_ASCII_TILES']}")
+    print(f"> MUT ASCII TILES:           {config['MUT_ASCII_TILES']}")
+    print("")
     print(f"> MAX IN/FEASIBLE POP SIZE:  {config['MAX_SET_SIZE']}")
     print(f"> FEASIBLE SELECTION RATE:   {config['FEASIBLE_SEL_RATE']}")
     print("")

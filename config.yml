@@ -16,6 +16,8 @@ WALL_RATE : 0.4
 CORES : 10
 FITNESS_FUNCTION: success
 OUTPUT_INTERVAL: 10
+INIT_ASCII_TILES: ['empty','wall','blob','minotaur','trap','treasure','potion','portal','ogre','ogre2','witch']
+MUT_ASCII_TILES: ['empty','wall','blob','trap','treasure','potion','ogre']
 
 PERSONA : R # runner [R], monster_killer [MK], treasure_collector [TC]
 PARALLEL: True
