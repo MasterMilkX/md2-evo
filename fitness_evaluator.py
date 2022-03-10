@@ -1,3 +1,10 @@
+from unittest import result
+from utility import entr_fitness
+import pandas as pd
+import numpy as np
+
+from scipy.stats import wasserstein_distance
+
 supported_fitness_functions = [
     "gma",
     "success"
@@ -11,50 +18,99 @@ supported_personas = [
 target_weight = 0.5
 
 
-def evaluate_fitness(result_obj, target_persona="R", func="success", cascading=True):
+y_gma = pd.read_csv("agent_y_import.csv")
+y_gma = y_gma.set_index("Unnamed: 0")
+agent_frequencies = pd.read_csv("n_agent_data.csv")
+agent_frequencies = agent_frequencies.set_index("Unnamed: 0")
+
+def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", cascading=True):
     assert(func in supported_fitness_functions,
            f"Input function {func} not part of supported fitness functions.")
     if func == "success":
-        return eval_fitness_success(result_obj, target_persona, cascading)
+        return eval_fitness_success(result_obj, asc_map, target_persona, cascading)
     elif func == "gma":
-        return eval_fitness_gma(result_obj, target_persona)
+        return eval_fitness_gma(result_obj, asc_map, target_persona)
 
+def eval_fitness_entropy(asc_map):
+    asc_map = np.array(asc_map)
+    return entr_fitness(asc_map)
 
-def eval_fitness_success(result_obj, target_persona, cascading):
+def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
     target_fitness = 0.0
     non_target_fitness = 0.0
     for persona in supported_personas:
 
         result_persona = result_obj[persona]
         level_report = result_persona["levelReport"]
-        win_or_lose = int(level_report["exitUtility"])
+        exit_utility = int(level_report["exitUtility"]) 
+        alive = level_report["alive"]
         end_dist_to_exit = level_report["endDistToExit"]
         longest_path = level_report["longestPath"]
         health_left = level_report["health"]
 
         if persona == target_persona:
-            if win_or_lose == 0:
-                target_fitness = 1 * target_weight
+            if exit_utility == 1.0 and alive:
+                target_fitness = 1
             else:
                 target_fitness += (end_dist_to_exit /
-                                   longest_path) * target_weight
+                                   longest_path)
         else:
             # divide in half to make room for 2 personas
-            non_target_fitness += 0.5 * \
-                (1 - target_weight) * (10 - health_left)
-
+            if health_left < 0:
+                health_left = 0
+            non_target_fitness +=  (10 - health_left)
+    non_target_fitness = non_target_fitness / 20
     # cascading
     if cascading:
-        if target_fitness != 0.5:
+        if target_fitness != 1:
             fitness = target_fitness
+        elif non_target_fitness != 1:
+            fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
         else:
-            fitness = target_fitness + non_target_fitness
+            fitness = target_fitness * target_weight + non_target_fitness * (1-target_weight) + eval_fitness_entropy(asc_map)
     else:
-        fitness = target_fitness + non_target_fitness
+        fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
 
     return fitness
 
 
-def eval_fitness_gma(result_obj, target_persona):
+def eval_fitness_gma(result_obj, asc_map, target_persona):
     # read in GMA data
-    raise NotImplementedError("gma func not implemented yet")
+    target = y_gma.loc[target_persona]
+
+    frequencies = {}
+    for per in supported_personas:
+        frequencies[per] = result_obj[per]["frequencies"]
+        frequencies[per]["Label"] = f"{per}-evo"
+    print("here")
+
+
+
+
+
+
+
+def calc_mech_importance(fil_data, all_data, mech):
+    fil_array = fil_data[mech].to_numpy()
+    all_array = all_data[mech].to_numpy()
+    sign = np.sign(fil_array.mean() - all_array.mean())
+    if sign == 0:
+        sign = 1
+    value = wasserstein_distance(fil_array, all_array)
+    return sign * value
+
+def calc_mech_axis(data, values, mechanics):
+    value_temp = {}
+    row_index = []
+    for mech in mechanics:
+        value_temp[mech] = []
+        for v in values:
+            if v in data.index:
+                traces = data.loc[v]
+            else:
+                continue
+            if len(traces) > 0:
+                value_temp[mech].append(calc_mech_importance(traces, data, mech))
+                if v not in row_index:
+                    row_index.append(v)
+    return pd.DataFrame(value_temp, index=row_index) 

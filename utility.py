@@ -72,18 +72,18 @@ def entr_fitness(m):
     der_entropy = -1*sum([(p * math.log10(p)) for p in tileDiffProbs.values() if p > 0])
     
     #return portion of both
-    return 0.5*(1.0-entropy)+0.5*(1.0-der_entropy)
+    return 0.5*(1.0-entropy) #+0.5*(1.0-der_entropy)
     
 
 #run program (like it was being called to the C# engine)
-persona_type = sys.argv[1]
-fileLoc = sys.argv[2]
-input_map = readAsciiFile(fileLoc)
-f = entr_fitness(input_map)
-fp = f*(random.randint(1,3)/3.0)   #simulate different fitnesses for the personas?
+# persona_type = sys.argv[1]
+# fileLoc = sys.argv[2]
+# input_map = readAsciiFile(fileLoc)
+# f = entr_fitness(input_map)
+# fp = f*(random.randint(1,3)/3.0)   #simulate different fitnesses for the personas?
 
-#output back to the console(?)
-print(f"{fp}")
+# #output back to the console(?)
+# print(f"{fp}")
 
 
 
