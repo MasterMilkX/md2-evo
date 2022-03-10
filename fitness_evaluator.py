@@ -1,5 +1,10 @@
+from unittest import result
 from utility import entr_fitness
+import pandas as pd
 import numpy as np
+
+from scipy.stats import wasserstein_distance
+
 supported_fitness_functions = [
     "gma",
     "success"
@@ -12,6 +17,11 @@ supported_personas = [
 
 target_weight = 0.5
 
+
+y_gma = pd.read_csv("agent_y_import.csv")
+y_gma = y_gma.set_index("Unnamed: 0")
+agent_frequencies = pd.read_csv("n_agent_data.csv")
+agent_frequencies = agent_frequencies.set_index("Unnamed: 0")
 
 def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", cascading=True):
     assert(func in supported_fitness_functions,
@@ -66,4 +76,41 @@ def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
 
 def eval_fitness_gma(result_obj, asc_map, target_persona):
     # read in GMA data
-    raise NotImplementedError("gma func not implemented yet")
+    target = y_gma.loc[target_persona]
+
+    frequencies = {}
+    for per in supported_personas:
+        frequencies[per] = result_obj[per]["frequencies"]
+        frequencies[per]["Label"] = f"{per}-evo"
+    print("here")
+
+
+
+
+
+
+
+def calc_mech_importance(fil_data, all_data, mech):
+    fil_array = fil_data[mech].to_numpy()
+    all_array = all_data[mech].to_numpy()
+    sign = np.sign(fil_array.mean() - all_array.mean())
+    if sign == 0:
+        sign = 1
+    value = wasserstein_distance(fil_array, all_array)
+    return sign * value
+
+def calc_mech_axis(data, values, mechanics):
+    value_temp = {}
+    row_index = []
+    for mech in mechanics:
+        value_temp[mech] = []
+        for v in values:
+            if v in data.index:
+                traces = data.loc[v]
+            else:
+                continue
+            if len(traces) > 0:
+                value_temp[mech].append(calc_mech_importance(traces, data, mech))
+                if v not in row_index:
+                    row_index.append(v)
+    return pd.DataFrame(value_temp, index=row_index) 
