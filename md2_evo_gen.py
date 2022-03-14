@@ -61,7 +61,7 @@ with open("template_map.txt") as f:
 
 
 class EvoMap():
-    def __init__(self, empty_rate, wall_rate, use_template, ext_cmd, persona, agent, temp_chrome_folder, randomInit=False):
+    def __init__(self, empty_rate, wall_rate, use_template, ext_cmd, persona, agent, C, temp_chrome_folder, randomInit=False):
         # ascii map rep of the level (2d array of characters)
         self.asc_map = []
         self.fitness = 0  # fitness value
@@ -75,6 +75,7 @@ class EvoMap():
         self.temp_chrome_folder = temp_chrome_folder
         self.persona = persona
         self.agent = agent
+        self.C = C
         self.r = random.random()  # test key
         if randomInit:
             self.initRandomMap()
@@ -89,6 +90,7 @@ class EvoMap():
             ext_cmd=self.ext_cmd,
             persona=self.persona,
             agent=self.agent,
+            C=self.C,
             temp_chrome_folder=self.temp_chrome_folder,
             randomInit=False
         )
@@ -422,7 +424,10 @@ class EvoMap():
         fileloc = os.path.join(self.temp_chrome_folder, filename)
         self.map2File(fileloc)  # export the map out to be read by the engine
         # run the script
-        return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}", f"{self.agent}"]) == 0   #make sure it works
+        if self.agent == "MCTS":
+            return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}", f"{self.agent}", f"{self.C}"]) == 0   #make sure it works
+        else:
+            return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}"]) == 0   #make sure it works
 
 
 # QD algorithm for storing feasible-infeasible maps
@@ -446,6 +451,7 @@ class FI2Pop():
         self.output_folder = config["OUTPUT_FOLDER"]
         self.output_interval = config["OUTPUT_INTERVAL"]
         self.agent = config["AGENT"]
+        self.C = config["C"]
 
     # initialize the population for the evolution
     def initPop(self, popsize):
@@ -458,6 +464,7 @@ class FI2Pop():
                 ext_cmd=self.ext_cmd,
                 persona=self.persona,
                 agent=self.agent,
+                C=self.C,
                 temp_chrome_folder=self.temp_chrome_folder,
                 randomInit=True
             )
