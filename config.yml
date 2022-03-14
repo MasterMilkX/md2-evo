@@ -35,5 +35,6 @@ MUT_ASCII_TILES: ["empty", "wall", "blob", "trap", "treasure", "potion", "ogre"]
 PERSONA: R # runner [R], monster_killer [MK], treasure_collector [TC]
 AGENT: MCTS
 C: 0.1
+ROLLOUT: 1
 PARALLEL: False
 OUTPUT_ARC: True
