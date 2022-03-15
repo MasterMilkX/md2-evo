@@ -472,6 +472,7 @@ class FI2Pop():
                 agent=self.agent,
                 C=self.C,
                 rollout=self.rollout,
+                playCount=self.playCount,
                 temp_chrome_folder=self.temp_chrome_folder,
                 randomInit=True
             )
