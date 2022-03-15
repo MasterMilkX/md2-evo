@@ -42,23 +42,22 @@ def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
 
         result_persona = result_obj[persona]
         level_report = result_persona["levelReport"]
-        exit_utility = int(level_report["exitUtility"]) 
-        alive = level_report["alive"]
-        end_dist_to_exit = level_report["endDistToExit"]
+        avgWin = result_persona["avgWin"]
+        avgDist = result_persona["avgDist"]
         longest_path = level_report["longestPath"]
-        health_left = level_report["health"]
+        avgHealth = result_persona["avgHealth"]
 
         if persona == target_persona:
-            if exit_utility == 1.0 and alive:
+            if avgWin == 1.0:
                 target_fitness = 1
             else:
-                target_fitness += (end_dist_to_exit /
+                target_fitness += (avgDist /
                                    longest_path)
         else:
             # divide in half to make room for 2 personas
-            if health_left < 0:
-                health_left = 0
-            non_target_fitness +=  (10 - health_left)
+            if avgHealth < 0:
+                avgHealth = 0
+            non_target_fitness +=  (10 - avgHealth)
     non_target_fitness = non_target_fitness / 20
     # cascading
     if cascading:
