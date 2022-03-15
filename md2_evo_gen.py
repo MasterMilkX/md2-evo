@@ -61,7 +61,7 @@ with open("template_map.txt") as f:
 
 
 class EvoMap():
-    def __init__(self, empty_rate, wall_rate, use_template, ext_cmd, persona, agent, C, playCount, temp_chrome_folder, randomInit=False):
+    def __init__(self, empty_rate, wall_rate, use_template, ext_cmd, persona, agent, C, rollout, playCount, temp_chrome_folder, randomInit=False):
         # ascii map rep of the level (2d array of characters)
         self.asc_map = []
         self.fitness = 0  # fitness value
@@ -77,6 +77,7 @@ class EvoMap():
         self.agent = agent
         self.C = C
         self.playCount = playCount
+        self.rollout = rollout
         self.r = random.random()  # test key
         if randomInit:
             self.initRandomMap()
@@ -93,6 +94,7 @@ class EvoMap():
             agent=self.agent,
             C=self.C,
             playCount=self.playCount,
+            rollout=self.rollout,
             temp_chrome_folder=self.temp_chrome_folder,
             randomInit=False
         )
@@ -427,7 +429,7 @@ class EvoMap():
         self.map2File(fileloc)  # export the map out to be read by the engine
         # run the script
         if self.agent == "MCTS":
-            return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}", f"{self.agent}", f"{self.C}"], f"{self.playCount}") == 0   #make sure it works
+            return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}", f"{self.agent}", f"{self.C}", f"{self.rollout}",  f"{self.playCount}"]) == 0   #make sure it works
         else:
             return subprocess.call(["mono", f"{self.ext_cmd}", f"{fileloc}"]) == 0   #make sure it works
 
@@ -455,6 +457,7 @@ class FI2Pop():
         self.agent = config["AGENT"]
         self.C = config["C"]
         self.playCount = config["PLAYCOUNT"]
+        self.rollout = config["ROLLOUT"]
 
     # initialize the population for the evolution
     def initPop(self, popsize):
@@ -468,7 +471,7 @@ class FI2Pop():
                 persona=self.persona,
                 agent=self.agent,
                 C=self.C,
-                playCount=self.playCount,
+                rollout=self.rollout,
                 temp_chrome_folder=self.temp_chrome_folder,
                 randomInit=True
             )
