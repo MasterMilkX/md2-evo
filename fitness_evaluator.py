@@ -17,7 +17,24 @@ supported_personas = [
 
 target_weight = 0.5
 
-
+import_mechanics = ['BlobCombine',
+ 'BlobHit',
+ 'BlobPotion',
+ 'CollectPotion',
+ 'CollectTreasure',
+ 'Die',
+ 'GoblinMeleeHit',
+ 'GoblinRangedHit',
+ 'JavelinThrow',
+ 'MinitaurHit',
+ 'OgreHit',
+ 'OgreTreasure',
+ 'ReachStairs',
+ 'TriggerTrap',
+ 'UsePortal',
+ 'EndTurn',
+ 'EnemyKill'
+]
 y_gma = pd.read_csv("agent_y_import.csv")
 y_gma = y_gma.set_index("Unnamed: 0")
 agent_frequencies = pd.read_csv("n_agent_data.csv")
@@ -79,8 +96,19 @@ def eval_fitness_gma(result_obj, asc_map, target_persona):
 
     frequencies = {}
     for per in supported_personas:
-        frequencies[per] = result_obj[per]["frequencies"]
+        frequencies[per] = {}
+        for mech in import_mechanics:
+            frequencies[per][mech] = 0
+            if mech in result_obj[per]["frequencies"].keys():
+                frequencies[per][mech] = result_obj[per]["frequencies"][mech]
         frequencies[per]["Label"] = f"{per}-evo"
+    frequencies_df = pd.DataFrame.from_dict(frequencies, orient='index')
+    all_data = pd.concat([agent_frequencies, frequencies_df])
+    all_data_n = all_data.copy()
+    for col in all_data.columns:
+        if col == "Label" or col == "IsUser" or col == "MapNumber":
+            continue
+        all_data_n[col] /= 1.0 * all_data[col].max()
     print("here")
 
 
