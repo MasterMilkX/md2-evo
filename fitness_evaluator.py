@@ -2,8 +2,10 @@ from unittest import result
 from utility import entr_fitness
 import pandas as pd
 import numpy as np
-
+import yaml
 from scipy.stats import wasserstein_distance
+from sklearn.metrics.pairwise import cosine_similarity
+
 
 supported_fitness_functions = [
     "gma",
@@ -39,6 +41,9 @@ y_gma = pd.read_csv("agent_y_import.csv")
 y_gma = y_gma.set_index("Unnamed: 0")
 agent_frequencies = pd.read_csv("n_agent_data.csv")
 agent_frequencies = agent_frequencies.set_index("Unnamed: 0")
+
+with open("config.yml", "r") as f:
+    config = yaml.safe_load(f)
 
 def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", cascading=True):
     assert(func in supported_fitness_functions,
@@ -91,6 +96,7 @@ def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
 
 
 def eval_fitness_gma(result_obj, asc_map, target_persona):
+    epsilon = 0.000000000001
     # read in GMA data
     target = y_gma.loc[target_persona]
 
@@ -108,15 +114,26 @@ def eval_fitness_gma(result_obj, asc_map, target_persona):
     for col in all_data.columns:
         if col == "Label" or col == "IsUser" or col == "MapNumber":
             continue
-        all_data_n[col] /= 1.0 * all_data[col].max()
-    print("here")
+
+        all_data_n[col] /= (1.0 * all_data[col].max() + epsilon)
+    all_data_n["IsUser"] = False
+    mech_importance_df = calc_mech_axis(all_data_n, "Label", ["R", "TC", "MK", "R-evo", "TC-evo", "MK-evo"],import_mechanics)
+    
+    # calculate target persona similarity
+    target_similarity = cosine_similarity([mech_importance_df.loc[target_persona].to_list()], [mech_importance_df.loc[f"{target_persona}-evo"]])[0,0]
+    non_target_similarity = []
+    for persona in ["R", "TC", "MK"]:
+        if persona != target_persona:
+            non_target_similarity.append(cosine_similarity([mech_importance_df.loc[target_persona].to_list()], [mech_importance_df.loc[f"{persona}-evo"]])[0,0])
+
+    fitness = 0.5 * target_similarity
+    non_target_fitness = sum(non_target_similarity) / 2
+    if target_similarity > config["GMA_THRESHOLD"]:
+        fitness += 0.5 * non_target_fitness
+    return fitness
 
 
-
-
-
-
-
+######### MECHANIC AXIS CALCULATIONS ###########
 def calc_mech_importance(fil_data, all_data, mech):
     fil_array = fil_data[mech].to_numpy()
     all_array = all_data[mech].to_numpy()
@@ -126,18 +143,35 @@ def calc_mech_importance(fil_data, all_data, mech):
     value = wasserstein_distance(fil_array, all_array)
     return sign * value
 
-def calc_mech_axis(data, values, mechanics):
+def calc_mech_axis(data, column, values, mechanics):
     value_temp = {}
     row_index = []
     for mech in mechanics:
         value_temp[mech] = []
         for v in values:
-            if v in data.index:
-                traces = data.loc[v]
+            if column != "Index":
+                traces = filter_traces(data, column, v)
             else:
-                continue
+                if v in data.index:
+                    traces = data.loc[v]
+                else:
+                    continue
             if len(traces) > 0:
                 value_temp[mech].append(calc_mech_importance(traces, data, mech))
                 if v not in row_index:
                     row_index.append(v)
     return pd.DataFrame(value_temp, index=row_index) 
+
+def filter_traces(data, column, value, IsUser=None):
+    remove_columns = (data.columns != 'IsUser') & (data.columns != 'Label')
+    if column != 'index':
+        filter_values = data[column] == value
+        if IsUser != None:
+            filter_values = filter_values & (data["IsUser"] == IsUser)
+        return data.loc[filter_values, remove_columns]
+    else:
+        new_data = data[data.index == value]
+        filter_values = [True] * len(new_data)
+        if IsUser != None:
+            filter_values = filter_values & (new_data["IsUser"] == IsUser)
+        return new_data.loc[filter_values, remove_columns]
