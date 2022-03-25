@@ -67,7 +67,7 @@ class EvoMap():
         self.fitness = 0  # fitness value
         self.con = 0  # constraint value
         # behavior characteristic definition [runner, monster killer, treasure collector]
-        self.genome = persona
+        self.persona = persona
         self.ext_cmd = ext_cmd
         self.use_template = use_template
         self.empty_rate = empty_rate
@@ -79,6 +79,7 @@ class EvoMap():
         self.playCount = playCount
         self.rollout = rollout
         self.r = random.random()  # test key
+        self.bvec = [0]
         if randomInit:
             self.initRandomMap()
 
@@ -105,7 +106,8 @@ class EvoMap():
         else:
             new_map.fitness = 0
             new_map.con = 0
-        new_map.genome = self.genome
+        new_map.persona = self.persona
+        new_map.bvec = self.bvec.copy()
 
         return new_map
 
@@ -125,8 +127,9 @@ class EvoMap():
         emstr += (mstr)
         emstr += (f"c:{self.con}\n")
         emstr += (f"f:{self.fitness}\n")
-        emstr += (f"g:{self.genome}\n")
+        emstr += (f"p:{self.persona}\n")
         emstr += (f"r:{self.r}\n")
+        emstr += (f"bv:{self.bvec}\n")
 
         return emstr
 
@@ -155,8 +158,10 @@ class EvoMap():
                         self.fitness = float(l.split(":")[1])
                     elif "con" in l:
                         self.con = int(l.split(":")[1])
-                    elif "genome" in l:
-                        self.genome = l.split(":")[1]
+                    elif "persona" in l:
+                        self.persona = l.split(":")[1]
+                    elif "bv" in l:
+                        self.bvec = [int(x) for x in l.split(":")[1].split("")]
 
     # export the map
     def exportMap(self, filename):
@@ -168,7 +173,8 @@ class EvoMap():
             f.write("\n%---%\n")
             f.write(f"fitness:{self.fitness}\n")
             f.write(f"con:{self.con}\n")
-            f.write(f"genome:{self.genome}\n")
+            f.write(f"persona:{self.persona}\n")
+            f.write(f"bv:{''.join(str(x) for x in [self.bvec])}")
 
     # get a random position within these coordinates (x,y)
     def randPos(self, x1, x2, y1, y2):
@@ -206,7 +212,6 @@ class EvoMap():
         update_map = deepcopy(m)
         # list of tuples
         charPos = list(zip(*np.where(np.array(update_map) == asc_char_map['portal'])))
-
         sansportals = MUT_ASCII_TILES.copy()
         if asc_char_map['portal'] in MUT_ASCII_TILES:
             sansportals.remove(asc_char_map['portal'])
@@ -444,7 +449,7 @@ class FI2Pop():
         self.maxSets = config["MAX_SET_SIZE"]  # maximum size of the feasible/infeasible population
         self.feasRate = config["FEASIBLE_SEL_RATE"] # probability to select from the feasible set for the new population    
         self.ext_cmd = config["EXT_GMA_CMD"]
-        self.genome = config["PERSONA"]
+        self.persona = config["PERSONA"]
         self.use_template = config["USE_TEMPLATE"]
         self.empty_rate = config["EMPTY_RATE"]
         self.wall_rate = config["WALL_RATE"]
@@ -504,8 +509,8 @@ class FI2Pop():
 
     def sortPop(self):
         for p in self.population:
-            # genome as a string binary value
-            gs = "".join([str(pi) for pi in p.genome])
+            # persona as a string binary value
+            gs = "".join([str(pi) for pi in p.persona])
             c = p.con
 
             # TO FEASIBLE (IF CONSTRAINTS WORK AND BETTER FITNESS)
@@ -543,8 +548,7 @@ class FI2Pop():
                 we = list(range(len(self.infeas), 0, -1))
                 newp.append(random.choices(self.infeas, weights=we, k=1)[0].clone())
 
-        # reset the population
-        self.population = newp
+        return newp
 
     def evaluate_pop(self, parallel):
         #set the constraint value for the population
@@ -638,8 +642,8 @@ class FI2Pop():
                 if outputArc and (i+1) % self.output_interval == 0:
                     self.exportArc(self.output_folder,f"Gen-{(i+1)}")
 
-                # select a new population
-                self.newPop(popsize, self.feasRate)
+                # select a new population 
+                self.population = self.newPop(popsize, self.feasRate)
 
                 pbar.update(1)
                 pbar.set_description(f"Best: {bestPopFit} | Avg: {avgPopFit}")
@@ -657,7 +661,7 @@ class FI2Pop():
 
 # run the main program if using this straight
 if __name__ == "__main__":
-    with open("config.yml", "r") as f:
+    with open("config_evo.yml", "r") as f:
         config = yaml.safe_load(f)
     expset = FI2Pop(config)
 
