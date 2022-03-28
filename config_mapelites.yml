@@ -2,7 +2,7 @@
 USE_TEMPLATE: True # whether to use the preset template
 # external call to the program that evaluates the map and returns the result as a JSON
 EXT_GMA_CMD: fitness_executable/MinidungeonsConsole.exe
-OUTPUT_FOLDER: MD2_evo-archive # output folder for the exported levels created
+OUTPUT_FOLDER: MD2_mapelites-archive # output folder for the exported levels created
 TEMP_CHROME_FOLDER: temp
 
 # experiment parameters
@@ -13,8 +13,8 @@ POPSIZE: 5
 MAX_SET_SIZE: 5
 EMPTY_RATE: 0.5
 WALL_RATE: 0.4
-CORES: 2
-FITNESS_FUNCTION: gma
+CORES: 5
+FITNESS_FUNCTION: simplicity
 OUTPUT_INTERVAL: 10
 INIT_ASCII_TILES:
   [
@@ -37,7 +37,7 @@ AGENT: AStar
 C: 1.0
 PLAYCOUNT: 1
 ROLLOUT: 1
-PARALLEL: False
+PARALLEL: True
 OUTPUT_ARC: True
 GMA_THRESHOLD: 0.8
 
