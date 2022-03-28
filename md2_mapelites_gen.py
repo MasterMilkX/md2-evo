@@ -50,7 +50,8 @@ class MAPElites():
 		self.eliteProb = config['ELITE_PROB']  #probability to select from the elite (feas) dataset
 		self.bc_dim_size = config['MAP_ELITES_DIM']  #dimensionality size of the matrix axis
 		self.cell_size = config['MAX_CELL_SIZE']
-
+		self.temp_chrome_folder = config["TEMP_CHROME_FOLDER"]
+		self.config = config
 		self.fi2 = FI2Pop(config)
 
 	#divide the matrixes into elite and non-elite
@@ -91,11 +92,13 @@ class MAPElites():
 		return cell
 
 	#convert the behavior characterstic value to a vector representation for the MAP-Elites
-	def bcvalue2vec(self,v):
+	def bcvalue2vec(self, dimensions):
 		##    REPLACE ME!   ##
-		z = np.zeros(self.bc_dim_size)
-		z[random.randint(0,self.bc_dim_size)] = 1
-		return [int(x) for x in z]
+		z = []
+		bins = [x for x in np.arange(self.bc_dim_size, 1, self.bc_dim_size)]
+		for idx, characteristic in enumerate(dimensions):
+			z.append(np.digitize(characteristic, bins=bins))
+		return z
 
 
 	def evaluate_pop(self, parallel):
@@ -117,26 +120,20 @@ class MAPElites():
 		# the script outputs a json file of the results - parse it
 		for i, chromosome in enumerate(self.fi2.population):
 			try:
-				# filelabel = f"evomap-{i}"
-				# jsonResFile = f"{filelabel}_results.txt"
-				# jsonObj = None
-				# jsonResLoc = os.path.join(self.fi2.temp_chrome_folder, jsonResFile)
-				# with open(jsonResLoc, 'r') as jf:
-				# 	jsonObj = json.load(jf)
+				filelabel = f"evomap-{i}"
+				jsonResFile = f"{filelabel}_results.txt"
+				jsonObj = None
+				jsonResLoc = os.path.join(self.temp_chrome_folder, jsonResFile)
+				with open(jsonResLoc, 'r') as jf:
+					jsonObj = json.load(jf)
 
-				# pass json to the fitness function to get values back
-				#fitness, behavior_vector = < NEW FUNCTION GOES HERE >
-
-				# ***** REPLACE ME! ****** #
-				fitness = random.random()
-				behavior_value = random.random()
-				behavior_vector = self.bcvalue2vec(behavior_value)  #in case the value needs to be converted here
-
+				# pass json to the fitness function to get a value back
+				fitness, dimensions = evaluate_fitness(jsonObj, chromosome.asc_map, "None", "simplicity", config=config)
 				#assign to the chromosome
 				chromosome.fitness = fitness
+				behavior_vector = self.bcvalue2vec(dimensions)
 				chromosome.bvec = behavior_vector
 
-				#print(f"#{i}: {chromosome.r} - {chromosome.con:.2f} - {chromosome.fitness:.2f} - {chromosome.bvec}")
 			except Exception:
 				continue
 

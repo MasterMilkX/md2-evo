@@ -45,13 +45,15 @@ agent_frequencies = agent_frequencies.set_index("Unnamed: 0")
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
 
-def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", cascading=True):
+def evaluate_fitness(result_obj, asc_map, target_persona="R", func="success", cascading=True, config=None):
     assert(func in supported_fitness_functions,
            f"Input function {func} not part of supported fitness functions.")
     if func == "success":
         return eval_fitness_success(result_obj, asc_map, target_persona, cascading)
     elif func == "gma":
         return eval_fitness_gma(result_obj, asc_map, target_persona)
+    elif func == "simplicity":
+        return eval_fitness_simplicity(result_obj, asc_map, config=config)
 
 def eval_fitness_entropy(asc_map):
     asc_map = np.array(asc_map)
@@ -90,7 +92,7 @@ def eval_fitness_success(result_obj, asc_map, target_persona, cascading):
         else:
             fitness = target_fitness * target_weight + non_target_fitness * (1-target_weight) + eval_fitness_entropy(asc_map)
     else:
-        fitness = target_fitness * target_weight+ non_target_fitness * (1 - target_weight)
+        fitness = target_fitness * target_weight + non_target_fitness * (1 - target_weight)
 
     return fitness
 
@@ -133,6 +135,12 @@ def eval_fitness_gma(result_obj, asc_map, target_persona):
     return fitness
 
 
+def eval_fitness_simplicity(result_obj, asc_map, config):
+    
+    fitness = eval_fitness_entropy(asc_map)
+    
+    dimensions = calc_dimensions(result_obj, config)
+    return fitness, dimensions
 ######### MECHANIC AXIS CALCULATIONS ###########
 def calc_mech_importance(fil_data, all_data, mech):
     fil_array = fil_data[mech].to_numpy()
@@ -175,3 +183,17 @@ def filter_traces(data, column, value, IsUser=None):
         if IsUser != None:
             filter_values = filter_values & (new_data["IsUser"] == IsUser)
         return new_data.loc[filter_values, remove_columns]
+
+def calc_dimensions(result_obj, config):
+    dimension_values = []
+    for persona in supported_personas:
+
+        result_persona = result_obj[persona]
+        avgWin = result_persona["avgWin"]
+        avgHealth = result_persona["avgHealth"]
+        if config["DIMENSION_TYPE"] == "health":
+            dimension_values.append(avgHealth)
+        elif config["DIMENSION_TYPE"] == "wins":
+            dimension_values.append(avgWin)
+    # chang
+    return np.array(dimension_values) / 10
