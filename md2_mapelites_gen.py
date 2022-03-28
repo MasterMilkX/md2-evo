@@ -275,7 +275,7 @@ class MAPElites():
 
 				# based on the iteration number - export to files
 				if outputArc and (i+1) % self.fi2.output_interval == 0:
-					self.fi2.exportArc(self.output_folder,f"Gen-{(i+1)}")
+					self.fi2.exportArc(self.config["OUTPUT_FOLDER"],f"Gen-{(i+1)}")
 
 				# select a new population (USING MAP ELITES METHOD)
 				self.fi2.population = self.newPop(popsize,self.eliteProb,self.fi2.feasRate)

@@ -1,0 +1,14 @@
+XXXXXXXXXX
+XXMXPTt XX
+Xt     TXX
+XX bTXXm X
+XoXXX    X
+X  b XP XX
+X   X t HX
+XeM t  X X
+XXXXXXXXXX
+%---%
+fitness:0.19673354147080346
+con:1
+persona:R
+bv:[3, 1, 0]
