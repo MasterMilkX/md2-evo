@@ -307,7 +307,7 @@ class MAPElites():
 		#export the elites
 		for i in range(len(mapSets['elites'])):
 			fm = mapSets['elites'][i]
-			fm.exportMap(os.path.join(folderLoc,"ELITE", f"{self.fi2.persona}-{i}-E_[{label}].txt"))
+			fm.exportMap(os.path.join(folderLoc,"ELITE", f"[{label}]_{fm.bvec2str()}.txt"))
 
 		# export the feasible population
 		for i in range(len(mapSets['feas'])):
@@ -318,7 +318,7 @@ class MAPElites():
 			# export the infeasible population
 			for i in range(len(mapSets['infeas'])):
 				fm = mapSets['infeas'][i]
-				fm.exportMap(os.path.join(folderLoc,"INFEAS", f"{self.fi2.persona}-{i}-I_[{label}].txt"))
+				fm.exportMap(os.path.join(folderLoc,"INFEAS", f"{self.fi2.persona}-{fm.bvec}-I_[{label}].txt"))
 
 
 
