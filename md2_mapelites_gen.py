@@ -156,8 +156,8 @@ class MAPElites():
 			#trim down
 			self.feas_matrix[bv_str] = sorted(self.feas_matrix[bv_str],reverse = True)
 			leftovers = []
-			if len(self.feas_matrix) > self.cell_size:
-				leftovers = deepcopy(self.feas_matrix[self.cell_size:])
+			if len(self.feas_matrix[bv_str]) > self.cell_size:
+				leftovers = deepcopy(self.feas_matrix[bv_str][self.cell_size:])
 			self.feas_matrix[bv_str] = self.feas_matrix[bv_str][:self.cell_size]
 
 			#add the leftovers to the infeasible set
