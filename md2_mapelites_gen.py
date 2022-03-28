@@ -51,6 +51,7 @@ class MAPElites():
 		self.bc_dim_size = config['MAP_ELITES_DIM']  #dimensionality size of the matrix axis
 		self.cell_size = config['MAX_CELL_SIZE']
 		self.temp_chrome_folder = config["TEMP_CHROME_FOLDER"]
+		self.output_folder = config['OUTPUT_FOLDER']
 		self.config = config
 		self.fi2 = FI2Pop(config)
 
@@ -275,13 +276,14 @@ class MAPElites():
 
 				# based on the iteration number - export to files
 				if outputArc and (i+1) % self.fi2.output_interval == 0:
-					self.fi2.exportArc(self.output_folder,f"Gen-{(i+1)}")
+					self.exportMAPElites(self.output_folder,f"Gen-{(i+1)}")
 
 				# select a new population (USING MAP ELITES METHOD)
 				self.fi2.population = self.newPop(popsize,self.eliteProb,self.fi2.feasRate)
 
 				pbar.update(1)
-				pbar.set_description(f"Best: {bestPopFit} | Avg: {avgPopFit}")
+				dm = self.divideMaps()
+				pbar.set_description(f"#[e,f,i]: {[len(dm['elites']),len(dm['feas']),len(dm['infeas'])]} | Best: {bestPopFit:.3f} | Avg: {avgPopFit:.3f}")
 
 		#export the best and averages as a csv in the archive folder
 		with open(os.path.join(self.fi2.output_folder,'best_fit.csv'),'w+') as bf:
@@ -291,6 +293,32 @@ class MAPElites():
 		with open(os.path.join(self.fi2.output_folder,'avg_fit.csv'),'w+') as af:
 			c = csv.writer(af)
 			c.writerow(avg_fit)
+
+	# export the MAP-Elites to a folder of text files with the information set
+	def exportMAPElites(self, folderLoc, label, expInfeas=True):
+		
+		# make the folder if it doesn't exist yet
+		for f in ["ELITE","FEAS","INFEAS"]:
+			os.makedirs(os.path.join(folderLoc,f), exist_ok=True)
+
+		#get the divided sets of elite, feasible, and infeasible
+		mapSets = self.divideMaps()
+
+		#export the elites
+		for i in range(len(mapSets['elites'])):
+			fm = mapSets['elites'][i]
+			fm.exportMap(os.path.join(folderLoc,"ELITE", f"{self.fi2.persona}-{i}-E_[{label}].txt"))
+
+		# export the feasible population
+		for i in range(len(mapSets['feas'])):
+			fm = mapSets['feas'][i]
+			fm.exportMap(os.path.join(folderLoc,"FEAS", f"{self.fi2.persona}-{i}-F_[{label}].txt"))
+
+		if expInfeas:
+			# export the infeasible population
+			for i in range(len(mapSets['infeas'])):
+				fm = mapSets['infeas'][i]
+				fm.exportMap(os.path.join(folderLoc,"INFEAS", f"{self.fi2.persona}-{i}-I_[{label}].txt"))
 
 
 

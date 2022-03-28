@@ -174,7 +174,7 @@ class EvoMap():
             f.write(f"fitness:{self.fitness}\n")
             f.write(f"con:{self.con}\n")
             f.write(f"persona:{self.persona}\n")
-            f.write(f"bv:{''.join(str(x) for x in [self.bvec])}")
+            f.write(f"bv:{''.join(str(x) for x in self.bvec)}")
 
     # get a random position within these coordinates (x,y)
     def randPos(self, x1, x2, y1, y2):
