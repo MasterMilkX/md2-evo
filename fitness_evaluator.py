@@ -196,4 +196,7 @@ def calc_dimensions(result_obj, config):
         elif config["DIMENSION_TYPE"] == "wins":
             dimension_values.append(avgWin)
     # chang
-    return np.array(dimension_values) / 10
+    if config["DIMENSION_TYPE"] == "health":
+        return np.array(dimension_values) / 10
+    else:
+        return np.array(dimension_values)
