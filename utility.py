@@ -72,7 +72,7 @@ def entr_fitness(m):
     der_entropy = -1*sum([(p * math.log10(p)) for p in tileDiffProbs.values() if p > 0])
     
     #return portion of both
-    return 0.5*(1.0-entropy) #+0.5*(1.0-der_entropy)
+    return (1.0-entropy) #+0.5*(1.0-der_entropy)
     
 
 #run program (like it was being called to the C# engine)
