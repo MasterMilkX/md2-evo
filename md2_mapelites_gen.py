@@ -247,7 +247,7 @@ class MAPElites():
 
 				# take current population and mutate them
 				for p in self.fi2.population:
-					p.mutateMap(self.fi2.mapMutate)
+					p.mutateMap(self.fi2.mapMutate,self.fi2.empty_mut_rate)
 
 				# evaluate the new population (using the MAP-Elites evaluator to retrieve the behavior characterstic)
 				self.evaluate_pop(parallel)
@@ -348,7 +348,8 @@ if __name__ == "__main__":
 	print(f"> TEMP EVO OUTPUT_FOLDER:    {config['TEMP_CHROME_FOLDER']}")
 	print("")
 	print(f"> MAP MUTATION RATE:         {config['MAP_MUTATION_RATE']}")
-	print(f"> EMPTY CHAR RATE:           {config['EMPTY_RATE']}")
+	print(f"> EMPTY INIT CHAR RATE:      {config['EMPTY_INIT_RATE']}")
+	print(f"> EMPTY MUT CHAR RATE:       {config['EMPTY_MUT_RATE']}")
 	print(f"> WALL CHAR RATE:            {config['WALL_RATE']}")
 	print(f"> INIT ASCII TILES:          {config['INIT_ASCII_TILES']}")
 	print(f"> MUT ASCII TILES:           {config['MUT_ASCII_TILES']}")

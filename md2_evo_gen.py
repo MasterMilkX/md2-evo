@@ -61,7 +61,7 @@ with open("template_map.txt") as f:
 
 
 class EvoMap():
-    def __init__(self, empty_rate, wall_rate, use_template, ext_cmd, persona, agent, C, rollout, playCount, temp_chrome_folder, randomInit=False):
+    def __init__(self, empty_init_rate, empty_mut_rate, wall_rate, use_template, ext_cmd, persona, agent, C, rollout, playCount, temp_chrome_folder, randomInit=False):
         # ascii map rep of the level (2d array of characters)
         self.asc_map = []
         self.fitness = 0  # fitness value
@@ -70,7 +70,8 @@ class EvoMap():
         self.persona = persona
         self.ext_cmd = ext_cmd
         self.use_template = use_template
-        self.empty_rate = empty_rate
+        self.empty_init_rate = empty_init_rate
+        self.empty_mut_rate = empty_mut_rate
         self.wall_rate = wall_rate
         self.temp_chrome_folder = temp_chrome_folder
         self.persona = persona
@@ -87,7 +88,8 @@ class EvoMap():
 
     def clone(self,saveStats=False):
         new_map = EvoMap(
-            empty_rate=self.empty_rate,
+            empty_init_rate=self.empty_init_rate,
+            empty_mut_rate=self.empty_mut_rate,
             wall_rate=self.wall_rate,
             use_template=self.use_template,
             ext_cmd=self.ext_cmd,
@@ -262,7 +264,7 @@ class EvoMap():
         # populate interior with random characters
         for hi in range(1, height-1):
             for wi in range(1, width-1):
-                if(random.random() > self.empty_rate):
+                if(random.random() > self.empty_init_rate):
                     if(random.random() > self.wall_rate):
                         c = random.choice(INIT_ASCII_TILES)
                     else:
@@ -284,12 +286,17 @@ class EvoMap():
         self.asc_map = am
 
     # mutates the ascii map according to a mutation rate
-    def mutateMap(self, mutRate):
+    def mutateMap(self, mutRate,emptyRate):
         nm = deepcopy(self.asc_map)
         for hi in range(1, len(nm)-1):
             for wi in range(1, len(nm[0])-1):
                 if(random.random() <= mutRate):
-                    nm[hi][wi] = random.choice(MUT_ASCII_TILES)
+                    #place empty tile
+                    if(random.random() <= emptyRate):
+                        nm[hi][wi] = asc_char_map['empty']
+                    #place random other tile
+                    else:
+                        nm[hi][wi] = random.choice(MUT_ASCII_TILES)
 
         # check for constraints
         nm = self.singleConstraint(nm, 'player')
@@ -454,7 +461,8 @@ class FI2Pop():
         self.ext_cmd = config["EXT_GMA_CMD"]
         self.persona = config["PERSONA"]
         self.use_template = config["USE_TEMPLATE"]
-        self.empty_rate = config["EMPTY_RATE"]
+        self.empty_init_rate = config["EMPTY_INIT_RATE"]
+        self.empty_mut_rate = config["EMPTY_MUT_RATE"]
         self.wall_rate = config["WALL_RATE"]
         self.temp_chrome_folder = config["TEMP_CHROME_FOLDER"]
         self.persona = config["PERSONA"]
@@ -472,7 +480,8 @@ class FI2Pop():
         self.population = []
         for p in range(popsize):
             e = EvoMap(
-                empty_rate=self.empty_rate,
+                empty_init_rate=self.empty_init_rate,
+                empty_mut_rate=self.empty_mut_rate,
                 wall_rate=self.wall_rate,
                 use_template=self.use_template,
                 ext_cmd=self.ext_cmd,
@@ -617,7 +626,7 @@ class FI2Pop():
 
                 # take current population and mutate them
                 for p in self.population:
-                    p.mutateMap(self.mapMutate)
+                    p.mutateMap(self.mapMutate,self.empty_mut_rate)
 
                 # evaluate the new population
                 self.evaluate_pop(parallel)
@@ -686,7 +695,8 @@ if __name__ == "__main__":
     print(f"> TEMP EVO OUTPUT_FOLDER:    {config['TEMP_CHROME_FOLDER']}")
     print("")
     print(f"> MAP MUTATION RATE:         {config['MAP_MUTATION_RATE']}")
-    print(f"> EMPTY CHAR RATE:           {config['EMPTY_RATE']}")
+    print(f"> EMPTY INIT CHAR RATE:      {config['EMPTY_INIT_RATE']}")
+    print(f"> EMPTY MUT CHAR RATE:       {config['EMPTY_MUT_RATE']}")
     print(f"> WALL CHAR RATE:            {config['WALL_RATE']}")
     print(f"> INIT ASCII TILES:          {config['INIT_ASCII_TILES']}")
     print(f"> MUT ASCII TILES:           {config['MUT_ASCII_TILES']}")
