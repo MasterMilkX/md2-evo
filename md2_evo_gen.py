@@ -421,14 +421,9 @@ class EvoMap():
 
     # evaluate the map for its constraint value, fitness value, and behavior characteristic
     def evalMap(self, fileID):
-        # get the fitness value from the minidungeons simulator if valid constraints
-        if self.con == 1:
-            # file ID for parallelization
-            return self.getExtEval(f"evomap-{fileID}.txt")
-        else:
-            #print(f"{fileID} invalid map!")
-            #print(f"#{fileID}: {self.r} - {self.con:.2f} - {self.fitness:.2f}")
-            return False
+        # get the fitness value from the minidungeons simulator
+        # file ID for parallelization
+        return self.getExtEval(f"evomap-{fileID}.txt")
 
     # exports the ascii map to a text file specified
     def map2File(self, fileloc):
