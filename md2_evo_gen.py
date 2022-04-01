@@ -666,16 +666,17 @@ class FI2Pop():
                 for pevo in past_evofiles:
                     os.remove(pevo)
 
+                # take current population and mutate them
+                for p in self.population:
+                    p.mutateMap(self.mapMutate,self.empty_mut_rate)
+
+
                 #remove maps in the population that cannot be won (unreachable exits)
                 winnable = []
                 for i in range(len(self.population)):
                     winnable.append(self.population[i].canExit())
                 self.population = [x for e,x in enumerate(self.population) if winnable[e]]
-
-                # take current population and mutate them
-                for p in self.population:
-                    p.mutateMap(self.mapMutate,self.empty_mut_rate)
-
+                
                 # evaluate the new population
                 self.evaluate_pop(parallel)
                 # for p in self.population:
