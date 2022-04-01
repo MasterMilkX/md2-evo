@@ -6,14 +6,14 @@ OUTPUT_FOLDER: MD2_mapelites-archive # output folder for the exported levels cre
 TEMP_CHROME_FOLDER: temp
 
 # experiment parameters
-ITERATIONS: 100
-MAP_MUTATION_RATE: 0.10
+ITERATIONS: 500
+MAP_MUTATION_RATE: 0.1
 FEASIBLE_SEL_RATE: 0.6
 POPSIZE: 50
 MAX_SET_SIZE: 20
-EMPTY_INIT_RATE: 0.8
-EMPTY_MUT_RATE: 0.9
-WALL_RATE: 0.5
+EMPTY_INIT_RATE: 0.5
+EMPTY_MUT_RATE: 0.5
+WALL_RATE: 0.3
 CORES: 30
 FITNESS_FUNCTION: simplicity
 OUTPUT_INTERVAL: 10
@@ -34,16 +34,16 @@ INIT_ASCII_TILES:
 MUT_ASCII_TILES: ["empty", "wall", "blob", "trap", "treasure", "potion", "ogre"]
 
 PERSONA: R # runner [R], monster_killer [MK], treasure_collector [TC]
-AGENT: Astar
+AGENT: Greedy # MCTSO, AStar, Greedy
 C: 1.0
 PLAYCOUNT: 1
-ROLLOUT: 20
+ROLLOUT: 1
 PARALLEL: True
 OUTPUT_ARC: True
 GMA_THRESHOLD: 0.8
 
 #MAP ELITES PARAMETERS
-MAP_ELITES_DIM: 0.25
+MAP_ELITES_DIM: 0.20
 ELITE_PROB: 0.8
 MAX_CELL_SIZE: 5
 DIMENSION_TYPE: health
