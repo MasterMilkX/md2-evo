@@ -273,6 +273,7 @@ class EvoMap():
                 else:
                     c = asc_char_map['empty']
                 am[hi][wi] = c
+
         #########    PRESET CONSTRAINTS     ########
 
         # make sure there is only 1 player and 1 exit
@@ -342,8 +343,11 @@ class EvoMap():
         emptyPos = list(
             zip(*np.where(np.array(m) != asc_char_map['wall'])))  # y,x
 
-        heroStart = list(
-            zip(*np.where(np.array(m) == asc_char_map['player'])))[0]
+        heroStart = list(zip(*np.where(np.array(m) == asc_char_map['player'])))
+        #no hero (was overwritten)
+        if(len(heroStart) == 0):
+            return 0
+        heroStart = heroStart[0]
         reached = {}
         for e in emptyPos:
             # print(f"{e} -> {m[e[0]][e[1]]}")
@@ -366,8 +370,50 @@ class EvoMap():
         tc_result = total_reached / (1.0 * len(emptyPos))
         return tc_result
 
-    # check if the map can be traversed
+    #return ascii value at position in the map
+    def getPos(self,p):
+        return self.asc_map[p[0]][p[1]]
 
+    #determine whether the exit is reachable by the player
+    def canExit(self):
+        m = self.asc_map
+
+        # get all the walkable tiles and set them as unreached
+        emptyPos = list(zip(*np.where(np.array(m) != asc_char_map['wall'])))  # y,x
+        heroStart = list(zip(*np.where(np.array(m) == asc_char_map['player'])))
+        #no hero (was overwritten)
+        if(len(heroStart) == 0):
+            return False
+        heroStart = heroStart[0]
+
+        reached = {}
+        for e in emptyPos:
+            #print(f"{e} -> {m[e[0]][e[1]]}")
+            reached[e] = False
+
+        s = heroStart  # start at a random empty tile position
+        q = [s]  # initialize queue
+
+        # flood fill with BFS
+        while len(q) > 0:
+            qi = q.pop()
+            if not reached[qi]:
+                reached[qi] = True
+                
+            #found the exit
+            if self.getPos(qi) == asc_char_map['exit']:
+                return True
+            # get the neighbors and add to queue if valid
+            n = self.getNeighbors(qi, m)
+            for ni in n:
+                if self.getPos(ni) != asc_char_map['wall'] and reached[ni] == False:
+                    q.append(ni)
+
+        #completely searched
+        return False
+
+
+    # check if the map can be traversed
     def canTraverse(self):
         m = self.asc_map
 
@@ -608,6 +654,7 @@ class FI2Pop():
         #for tracking the fitness values over time
         best_fit = []
         avg_fit = []
+        real_pop_size = []
 
         # start the iterations
         with tqdm(total=iterations) as pbar:
@@ -618,6 +665,12 @@ class FI2Pop():
                 #print (f"( Deleting {len(past_evofiles)} previous evomap files... )")
                 for pevo in past_evofiles:
                     os.remove(pevo)
+
+                #remove maps in the population that cannot be won (unreachable exits)
+                winnable = []
+                for i in range(len(self.population)):
+                    winnable.append(self.population[i].canExit())
+                self.population = [x for e,x in enumerate(self.population) if winnable[e]]
 
                 # take current population and mutate them
                 for p in self.population:
@@ -653,7 +706,7 @@ class FI2Pop():
                 self.population = self.newPop(popsize, self.feasRate)
 
                 pbar.update(1)
-                pbar.set_description(f"Best: {bestPopFit} | Avg: {avgPopFit}")
+                pbar.set_description(f"Valid levels: {len(self.population)} / {self.popsize} | Best: {bestPopFit} | Avg: {avgPopFit}")
 
         #export the best and averages as a csv in the archive folder
         with open(os.path.join(self.output_folder,'best_fit.csv'),'w+') as bf:
@@ -663,6 +716,12 @@ class FI2Pop():
         with open(os.path.join(self.output_folder,'avg_fit.csv'),'w+') as af:
             c = csv.writer(af)
             c.writerow(avg_fit)
+
+        #export the population size over time
+        with open(os.path.join(self.output_folder,'real_pop_size.csv'),'w+') as af:
+            c = csv.writer(af)
+            c.writerow(real_pop_size)
+            c.write(f"\nTOTAL VALID LEVELS: {sum(real_pop_size)}")
 
 
 
