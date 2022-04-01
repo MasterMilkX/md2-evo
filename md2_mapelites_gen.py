@@ -234,7 +234,7 @@ class MAPElites():
 		#for tracking the fitness values over time
 		best_fit = []
 		avg_fit = []
-
+		real_pop_size = []
 		# start the iterations
 		with tqdm(total=iterations) as pbar:
 			for i in range(iterations):
@@ -255,7 +255,7 @@ class MAPElites():
 				for i in range(len(self.fi2.population)):
 					winnable.append(self.fi2.population[i].canExit())
 				self.fi2.population = [x for e,x in enumerate(self.fi2.population) if winnable[e]]
-
+				real_pop_size.append(len(self.fi2.population))
 				# evaluate the new population (using the MAP-Elites evaluator to retrieve the behavior characterstic)
 				self.evaluate_pop(parallel)
 				# for p in self.population:
@@ -300,6 +300,12 @@ class MAPElites():
 		with open(os.path.join(self.fi2.output_folder,'avg_fit.csv'),'w+') as af:
 			c = csv.writer(af)
 			c.writerow(avg_fit)
+
+		#export the population size over time
+        with open(os.path.join(self.fi2.output_folder,'real_pop_size.csv'),'w+') as af:
+            c = csv.writer(af)
+            c.writerow(real_pop_size)
+            c.write(f"\nTOTAL VALID LEVELS: {sum(real_pop_size)}")
 
 	# export the MAP-Elites to a folder of text files with the information set
 	def exportMAPElites(self, folderLoc, label, expInfeas=True):
