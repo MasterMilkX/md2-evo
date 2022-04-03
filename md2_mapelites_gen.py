@@ -252,8 +252,8 @@ class MAPElites():
 				
                 #remove maps in the population that cannot be won (unreachable exits)
 				winnable = []
-				for i in range(len(self.fi2.population)):
-					winnable.append(self.fi2.population[i].canExit())
+				for j in range(len(self.fi2.population)):
+					winnable.append(self.fi2.population[j].canExit())
 				self.fi2.population = [x for e,x in enumerate(self.fi2.population) if winnable[e]]
 				real_pop_size.append(len(self.fi2.population))
 				# evaluate the new population (using the MAP-Elites evaluator to retrieve the behavior characterstic)
