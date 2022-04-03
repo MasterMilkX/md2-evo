@@ -305,7 +305,7 @@ class MAPElites():
 		with open(os.path.join(self.fi2.output_folder,'real_pop_size.csv'),'w+') as af:
 			c = csv.writer(af)
 			c.writerow(real_pop_size)
-			c.write(f"\nTOTAL VALID LEVELS: {sum(real_pop_size)}")
+			c.writerow(f"\nTOTAL VALID LEVELS: {sum(real_pop_size)}")
 
 	# export the MAP-Elites to a folder of text files with the information set
 	def exportMAPElites(self, folderLoc, label, expInfeas=True):
